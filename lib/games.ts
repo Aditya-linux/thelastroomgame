@@ -10,7 +10,6 @@ export interface GameTier {
   shape: string;
   color: string;
   description: string;
-  priceId: string;
 }
 
 export const GAME_TIERS: GameTier[] = [
@@ -24,7 +23,6 @@ export const GAME_TIERS: GameTier[] = [
     shape: "circle",
     color: "#00F5FF",
     description: "Visual puzzle — Pattern recognition. Find the word hidden in the grid.",
-    priceId: "price_clubs_id_here",
   },
   {
     id: "diamonds",
@@ -36,7 +34,6 @@ export const GAME_TIERS: GameTier[] = [
     shape: "triangle",
     color: "#FFD700",
     description: "Cipher puzzle — Decode the encrypted message to find the answer.",
-    priceId: "price_diamonds_id_here",
   },
   {
     id: "spades",
@@ -48,15 +45,8 @@ export const GAME_TIERS: GameTier[] = [
     shape: "square",
     color: "#FF2D6B",
     description: "Meta puzzle — Multi-step challenge. Only the sharpest minds survive.",
-    priceId: "price_spades_id_here",
   },
 ];
-
-export const PRICE_IDS: Record<string, string> = {
-  clubs: "price_clubs_id_here",
-  diamonds: "price_diamonds_id_here",
-  spades: "price_spades_id_here",
-};
 
 // Answers stored as SHA256 hashes — never in plaintext
 export const ANSWER_HASHES: Record<string, string> = {

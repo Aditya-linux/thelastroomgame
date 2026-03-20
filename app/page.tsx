@@ -130,7 +130,7 @@ export default function Home() {
           <div className="step-card">
             <div className="step-number">02</div>
             <h3>PAY TO ENTER</h3>
-            <p>One-time entry fee. Stripe checkout. Apple Pay & Google Pay accepted.</p>
+            <p>One-time entry fee. Razorpay checkout. Apple Pay & Google Pay accepted.</p>
           </div>
           <div className="step-card">
             <div className="step-number">03</div>
