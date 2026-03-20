@@ -81,12 +81,8 @@ export function PayButton({
   };
 
   return (
-    <button className="pay-button" onClick={handlePay} disabled={loading}>
-      <span className="pay-button-icon">⎡</span>
-      <span className="pay-button-text">
-        {loading ? "PROCESSING..." : `ENTER FOR $${cost}`}
-      </span>
-      <span className="pay-button-icon">⎤</span>
+    <button className="pay-btn" onClick={handlePay} disabled={loading}>
+      {loading ? "PROCESSING..." : `ENTER FOR $${cost}`}
     </button>
   );
 }

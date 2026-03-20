@@ -1,223 +1,232 @@
 "use client";
 import { useState, useEffect } from "react";
-import { LiveSidebar } from "./Sidebar";
-import { Countdown } from "./Countdown";
-import { GAME_CLUES, getVisibleClues } from "@/lib/clues";
+import { GAME_TIERS } from "@/lib/games";
 
-// ── PUZZLE DATA ──
-const CLUBS_GRID = [
-  ["M", "A", "R", "T", "I", "N"],
-  ["I", "N", "O", "R", "T", "H"],
-  ["R", "E", "D", "S", "K", "Y"],
-  ["R", "I", "V", "E", "R", "S"],
-  ["O", "P", "E", "N", "E", "D"],
-  ["R", "S", "L", "E", "E", "P"],
-];
-
-const DIAMONDS_CIPHER = "WKH URRP QHYHU FORVHV";
-
-const SPADES_MORSE =
-  "- .... . / --- ...- . .-. .-.. --- --- -.- / .... --- - . .-..";
-
-interface PuzzleRoomProps {
-  gameId: string;
-  userId: string;
+function useTimer(startHours = 47) {
+  const [secs, setSecs] = useState(startHours * 3600 + 3 * 60 + 27);
+  useEffect(() => {
+    const t = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return {
+    h: Math.floor(secs / 3600),
+    m: Math.floor((secs % 3600) / 60),
+    s: secs % 60,
+    total: secs,
+    urgent: secs < 14400,
+  };
 }
 
-export function PuzzleRoom({ gameId, userId }: PuzzleRoomProps) {
+const pad = (n: number) => String(n).padStart(2, "0");
+
+const LEADERBOARD: { num: string; time: string }[] = [
+  { num: "067", time: "04:12:33" },
+  { num: "218", time: "07:44:01" },
+  { num: "101", time: "11:05:59" },
+];
+
+export function PuzzleRoom({ gameId, userId }: { gameId: string; userId: string }) {
+  const game = GAME_TIERS.find((g) => g.id === gameId);
+  const timer = useTimer(44);
+  const playerNum = userId.slice(0, 3).toUpperCase() || "???";
+
   const [answer, setAnswer] = useState("");
-  const [result, setResult] = useState<{
-    correct: boolean;
-    firstSolver: boolean;
-  } | null>(null);
+  const [state, setState] = useState<"idle" | "correct" | "wrong">("idle");
+  const [tries, setTries] = useState(0);
+  const [hint, setHint] = useState<string | null>(null);
+  const [hintCount, setHintCount] = useState(0);
+  const [solved, setSolved] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [attempts, setAttempts] = useState(0);
-  const [clues, setClues] = useState(
-    getVisibleClues(new Date(), GAME_CLUES[gameId] || [])
-  );
 
-  // Demo countdown — 48 hours from now (in production, fetch endsAt from Firestore)
-  const [endsAt] = useState(() => {
-    const d = new Date();
-    d.setHours(d.getHours() + 48);
-    return d;
-  });
+  if (!game) return <div>Game not found</div>;
 
-  // Update visible clues every minute
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setClues(getVisibleClues(new Date(), GAME_CLUES[gameId] || []));
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [gameId]);
+  const elapsedHours = 44 - timer.h;
+  const visibleClues = game.clues.filter((c) => c.hour <= elapsedHours + 1);
+  const p = game.puzzle;
 
-  const handleSubmit = async () => {
-    if (!answer.trim()) return;
+  const submit = async () => {
+    if (!answer.trim() || solved || loading) return;
     setLoading(true);
+
     try {
       const res = await fetch("/api/submit-answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId, answer }),
+        body: JSON.stringify({ gameId, answer: answer.trim().toUpperCase() }),
       });
       const data = await res.json();
-      setResult(data);
-      setAttempts((a) => a + 1);
+      
+      const t = tries + 1;
+      setTries(t);
 
       if (data.correct) {
-        window.location.href = `/win?gameId=${gameId}`;
+        setState("correct");
+        setSolved(true);
+        setTimeout(() => {
+          // Pass stats via query string or rely on server state for win screen
+          window.location.href = `/win?gameId=${gameId}&tries=${t}&h=${timer.h}&m=${timer.m}&s=${timer.s}`;
+        }, 1200);
+      } else {
+        setState("wrong");
+        setTimeout(() => setState("idle"), 900);
       }
     } catch {
-      // Error
+      setState("wrong");
+      setTimeout(() => setState("idle"), 900);
     } finally {
       setLoading(false);
     }
   };
 
+  const revealHint = () => {
+    const hints = [p.hint1, p.hint2];
+    if (hintCount < hints.length) {
+      setHint(hints[hintCount]);
+      setHintCount((c) => c + 1);
+    }
+  };
+
   return (
-    <div className="puzzle-room">
-      <div className="puzzle-main">
-        {/* Header */}
-        <div className="puzzle-header">
-          <div className="puzzle-room-label">
-            <span className="room-tag">ROOM</span>
-            <span className="room-name">
-              {gameId.toUpperCase()}
-            </span>
-          </div>
-          <div className="player-badge">
-            <span className="player-icon">●</span>
-            <span className="player-id">{userId.slice(0, 8)}</span>
-          </div>
+    <div className="game-room" style={{ "--game-color": game.color } as React.CSSProperties}>
+      {/* Topbar */}
+      <div className="game-topbar">
+        <div className="topbar-left">
+          <span className="topbar-suit" style={{ color: game.color }}>{game.suit}</span>
+          <span className="topbar-game-name">{game.suitName} GAME</span>
+          <span className="topbar-sep">·</span>
+          <span className="topbar-player">PLAYER {playerNum}</span>
         </div>
-
-        <Countdown endsAt={endsAt} />
-
-        {/* Puzzle content */}
-        <div className="puzzle-content">
-          {gameId === "clubs" && <ClubsPuzzle />}
-          {gameId === "diamonds" && <DiamondsPuzzle />}
-          {gameId === "spades" && <SpadesPuzzle />}
-        </div>
-
-        {/* Clues */}
-        <div className="clues-section">
-          <h3 className="clues-title">
-            <span className="clue-icon">🔍</span> CLUES RELEASED
-          </h3>
-          {clues.length === 0 ? (
-            <p className="no-clues">No clues available yet. Check back later.</p>
-          ) : (
-            clues.map((c) => (
-              <div key={c.id} className="clue-card">
-                <span className="clue-number">#{c.id}</span>
-                <span className="clue-text">{c.text}</span>
-              </div>
-            ))
-          )}
-          <p className="clue-next">
-            New clues drop every 8 hours.
-          </p>
-        </div>
-
-        {/* Answer submission */}
-        <div className="answer-section">
-          <div className="answer-input-group">
-            <input
-              type="text"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="ENTER YOUR ANSWER..."
-              className="answer-input"
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            />
-            <button
-              onClick={handleSubmit}
-              disabled={loading || !answer.trim()}
-              className="submit-button"
-            >
-              {loading ? "CHECKING..." : "SUBMIT"}
-            </button>
-          </div>
-
-          {result && !result.correct && (
-            <div className="answer-wrong">
-              <span>✕ INCORRECT</span>
-              <span className="attempt-count">Attempt #{attempts}</span>
-            </div>
-          )}
+        <div className="topbar-right">
+          <span className="live-badge"><span className="pulse-dot" style={{ width: 5, height: 5 }} />LIVE</span>
+          <span className={`timer-display ${timer.urgent ? "warn" : ""}`}>
+            {pad(timer.h)}:{pad(timer.m)}:{pad(timer.s)}
+          </span>
         </div>
       </div>
 
-      <LiveSidebar gameId={gameId} />
-    </div>
-  );
-}
+      {/* Main puzzle area */}
+      <div className="game-main">
+        <div className="game-header">
+          <p className="game-num-tag">{game.suit} {game.suitName} · {game.shape} {game.shapeLabel} · DIFFICULTY {game.difficulty}</p>
+          <h2 className="game-main-title">{p.title}</h2>
+        </div>
 
-/* ── CLUBS PUZZLE: Word Grid ── */
-function ClubsPuzzle() {
-  return (
-    <div className="puzzle-type">
-      <h2 className="puzzle-title">♣ GRID SEARCH</h2>
-      <p className="puzzle-instruction">
-        A word is hidden in this grid. Look carefully — not every answer runs
-        horizontally.
-      </p>
-      <div className="word-grid">
-        {CLUBS_GRID.map((row, ri) => (
-          <div key={ri} className="grid-row">
-            {row.map((cell, ci) => (
-              <div key={ci} className="grid-cell">
-                {cell}
+        <p className="game-flavor">{game.flavor}</p>
+
+        <div className="rule-box">{p.body}</div>
+
+        {/* GRID */}
+        {p.type === "grid" && (
+          <div className="grid-container">
+            <p className="grid-sublabel">The Grid — something is hidden in plain sight</p>
+            <div className="letter-grid">
+              {p.grid.map((row: string[], ri: number) => (
+                <div key={ri} className="grid-row">
+                  {row.map((cell: string, ci: number) => (
+                    <div key={ci} className={`grid-cell ${ci === 0 ? "hl" : ""}`}>{cell}</div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* CIPHER */}
+        {p.type === "cipher" && (
+          <div>
+            <p className="grid-sublabel">Encoded Transmission</p>
+            <div className="cipher-display">
+              {p.encoded}
+              <p className="cipher-note">{p.subtext}</p>
+            </div>
+          </div>
+        )}
+
+        {/* MULTI-STEP */}
+        {p.type === "multi" && (
+          <div className="steps-list">
+            {p.steps.map((step: any, i: number) => (
+              <div key={i} className="step-item">
+                <p className="step-tag">{step.label}</p>
+                <p className="step-body">{step.text}</p>
+                {step.morse && <div className="morse-code">{step.morse}</div>}
+                <p className="step-note">{step.subtext}</p>
               </div>
             ))}
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+        )}
 
-/* ── DIAMONDS PUZZLE: Caesar Cipher ── */
-function DiamondsPuzzle() {
-  return (
-    <div className="puzzle-type">
-      <h2 className="puzzle-title">♦ CIPHER</h2>
-      <p className="puzzle-instruction">
-        Decode the following encrypted message. The answer is the decoded
-        plaintext.
-      </p>
-      <div className="cipher-display">
-        <div className="cipher-text">{DIAMONDS_CIPHER}</div>
-        <div className="cipher-hint">
-          <span className="hint-label">HINT:</span> Julius Caesar sent messages
-          this way.
+        {/* Answer */}
+        <div className="answer-block">
+          <p className="answer-tag">Submit Answer</p>
+          <div className="answer-input-wrap">
+            <input
+              className={`answer-input ${state === "correct" ? "correct" : ""} ${state === "wrong" ? "wrong" : ""}`}
+              value={answer}
+              onChange={e => setAnswer(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && submit()}
+              placeholder="TYPE YOUR ANSWER..."
+              disabled={solved || loading}
+            />
+          </div>
+          <div className="submit-row">
+            <button className="submit-btn" onClick={submit} disabled={solved || !answer.trim() || loading}>
+              {solved ? "✓ SOLVED" : loading ? "CHECKING..." : "SUBMIT"}
+            </button>
+            {state === "correct" && <span className="feedback ok">✓ CORRECT — Loading results...</span>}
+            {state === "wrong" && <span className="feedback err">✗ WRONG ANSWER</span>}
+            {tries > 0 && state !== "correct" && <span className="tries">{tries} attempt{tries > 1 ? "s" : ""}</span>}
+          </div>
+
+          <div className="hint-area">
+            {hintCount < 2 && (
+              <button className="hint-trigger" onClick={revealHint}>
+                {hintCount === 0 ? "request hint →" : "one more hint →"}
+              </button>
+            )}
+            {hint && <div className="hint-reveal">〉 {hint}</div>}
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-/* ── SPADES PUZZLE: Multi-step ── */
-function SpadesPuzzle() {
-  return (
-    <div className="puzzle-type">
-      <h2 className="puzzle-title">♠ MULTI-STEP</h2>
-      <p className="puzzle-instruction">
-        Decode the morse code below. The answer is a year + a word, no spaces,
-        all lowercase.
-      </p>
-      <div className="cipher-display">
-        <div className="morse-text">{SPADES_MORSE}</div>
-        <div className="cipher-hint">
-          <span className="hint-label">STEP 1:</span> Decode the morse.
-          <br />
-          <span className="hint-label">STEP 2:</span> Identify the famous
-          place.
-          <br />
-          <span className="hint-label">STEP 3:</span> Find the film.
-          <br />
-          <span className="hint-label">STEP 4:</span> Combine year + title.
+      {/* Sidebar */}
+      <div className="game-sidebar">
+        <div className="sb-section">
+          <p className="sb-label">Live Arena Stats</p>
+          <div className="sb-stat"><span className="sb-stat-key">Attempting</span><span className="sb-stat-val">{Math.floor(Math.random() * 15) + 25}</span></div>
+          <div className="sb-stat"><span className="sb-stat-key">Total players</span><span className="sb-stat-val">{game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38}</span></div>
+          <div className="sb-stat"><span className="sb-stat-key">Prize pool</span><span className="sb-stat-val">${(game.cost * (game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38)).toLocaleString()}</span></div>
+          <div className="sb-stat"><span className="sb-stat-key">Winner takes</span><span className="sb-stat-val">${Math.floor(game.cost * (game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38) * game.winPercent / 100).toLocaleString()}</span></div>
+        </div>
+
+        <div className="sb-section">
+          <p className="sb-label">Intelligence Drops</p>
+          {game.clues.map((c, i) => (
+            visibleClues.includes(c) ? (
+              <div key={i} className={`clue-card ${c.isRedHerring ? "rh" : "normal"}`}>
+                <p className="clue-hour">Hour {c.hour} {c.isRedHerring ? "· ⚠ UNVERIFIED" : "· CONFIRMED"}</p>
+                {c.text}
+              </div>
+            ) : (
+              <div key={i} className="locked-clue-slot">Hour {c.hour} · Locked</div>
+            )
+          ))}
+        </div>
+
+        <div className="sb-section">
+          <p className="sb-label">Leaderboard</p>
+          {LEADERBOARD.map((r, i) => (
+            <div key={i} className="lb-entry">
+              <span className="lb-rank">#{i + 1}</span>
+              <span className="lb-num">Player {r.num}</span>
+              <span className="lb-time">{r.time}</span>
+            </div>
+          ))}
+          <div className="lb-entry" style={{ opacity: 0.35 }}>
+            <span className="lb-rank">—</span>
+            <span className="lb-num" style={{ fontStyle: "italic", color: "var(--dim)" }}>you?</span>
+            <span className="lb-time">—</span>
+          </div>
         </div>
       </div>
     </div>

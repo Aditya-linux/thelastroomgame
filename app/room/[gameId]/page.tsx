@@ -15,7 +15,7 @@ export default async function RoomPage({
 
   // Not logged in → send to sign in
   if (!(session?.user as any)?.id) {
-    redirect(`/api/auth/signin?callbackUrl=/room/${gameId}`);
+    redirect(`/games?msg=login_required`);
   }
 
   const userId = (session!.user as any).id;

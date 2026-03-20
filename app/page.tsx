@@ -1,166 +1,103 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { Countdown } from "@/components/Countdown";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+function useTimer(startHours = 47) {
+  const [secs, setSecs] = useState(startHours * 3600 + 3 * 60 + 27);
+  useEffect(() => {
+    const t = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return {
+    h: Math.floor(secs / 3600),
+    m: Math.floor((secs % 3600) / 60),
+    s: secs % 60,
+    total: secs,
+    urgent: secs < 14400,
+  };
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
 
 export default function Home() {
   const { data: session } = useSession();
-  const [endsAt] = useState(() => {
-    const d = new Date();
-    d.setHours(d.getHours() + 48);
-    return d;
-  });
+  const timer = useTimer(47);
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
+  const handleEnter = () => {
+    if (!session) {
+      signIn("google", { callbackUrl: "/games" });
+    } else {
+      router.push("/games");
+    }
+  };
+
+  const playerNum = (session?.user as any)?.playerNumber || "???";
+
+  if (!mounted) return null;
+
   return (
-    <main className="landing">
-      {/* Background effects */}
-      <div className="bg-grid" />
-      <div className="bg-glow bg-glow-1" />
-      <div className="bg-glow bg-glow-2" />
-      <div className="scanline" />
+    <div className="landing">
+      <div className="geo-bg">
+        <div className="geo-circle" />
+        <div className="geo-triangle" />
+        <div className="geo-square" />
+      </div>
 
-      {/* Floating shapes */}
-      <div className="float-shape shape-circle" />
-      <div className="float-shape shape-triangle" />
-      <div className="float-shape shape-square" />
+      <div className="landing-inner">
+        <div className="facility-tag">THE FACILITY · SEASON 01</div>
+        <div className="player-badge">PLAYER {playerNum} · CONNECTED</div>
 
-      {/* Nav */}
-      <nav className="landing-nav">
-        <div className="nav-brand">
-          <span className="brand-symbol">◈</span>
-          <span className="brand-text">THE LAST ROOM</span>
+        <div className="suit-row">
+          <span className="suit-icon">♣</span>
+          <span className="suit-icon">♦</span>
+          <span className="suit-icon">♠</span>
         </div>
-        <div className="nav-right">
-          {session ? (
-            <div className="player-badge-nav">
-              <span className="player-dot" />
-              <span>
-                Player #
-                {(session.user as any).playerNumber || "???"}
-              </span>
-            </div>
-          ) : (
-            <button
-              className="nav-login"
-              onClick={() => signIn("google")}
-            >
-              SIGN IN
-            </button>
-          )}
-        </div>
-      </nav>
 
-      {/* Hero */}
-      <section className="hero">
-        <div className="hero-content">
-          {/* Korean accent text */}
-          <p className="korean-accent">마지막 방</p>
+        <h1 className="main-title">
+          <span className="main-title-accent">마지막 방</span>
+          THE LAST<br />ROOM
+        </h1>
 
-          <h1 className="hero-title">
-            THE LAST <span className="hero-highlight">ROOM</span>
-          </h1>
-
-          <p className="hero-subtitle">
-            48 hours. One puzzle. One winner.
-            <br />
-            <span className="hero-emphasis">Do you dare enter?</span>
-          </p>
-
-          {/* Countdown */}
-          {mounted && (
-            <div className="hero-countdown">
-              <Countdown endsAt={endsAt} />
-            </div>
-          )}
-
-          {/* Stats */}
-          <div className="hero-stats">
-            <div className="hero-stat">
-              <span className="hero-stat-value">3</span>
-              <span className="hero-stat-label">ROOMS</span>
-            </div>
-            <div className="hero-stat-divider" />
-            <div className="hero-stat">
-              <span className="hero-stat-value">48h</span>
-              <span className="hero-stat-label">TIME LIMIT</span>
-            </div>
-            <div className="hero-stat-divider" />
-            <div className="hero-stat">
-              <span className="hero-stat-value">70%</span>
-              <span className="hero-stat-label">WINNER TAKES</span>
-            </div>
-          </div>
-
-          {/* CTA */}
-          <div className="hero-cta">
-            <Link href="/games" className="cta-button primary">
-              <span className="cta-icon">▶</span>
-              ENTER THE ROOMS
-            </Link>
-          </div>
-
-          {/* Tiers preview */}
-          <div className="tier-preview">
-            <div className="tier-chip" style={{ borderColor: "#00F5FF" }}>
-              <span style={{ color: "#00F5FF" }}>♣</span> Clubs · $5
-            </div>
-            <div className="tier-chip" style={{ borderColor: "#FFD700" }}>
-              <span style={{ color: "#FFD700" }}>♦</span> Diamonds · $10
-            </div>
-            <div className="tier-chip" style={{ borderColor: "#FF2D6B" }}>
-              <span style={{ color: "#FF2D6B" }}>♠</span> Spades · $20
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="how-it-works">
-        <h2 className="section-title">HOW IT WORKS</h2>
-        <div className="steps-grid">
-          <div className="step-card">
-            <div className="step-number">01</div>
-            <h3>CHOOSE YOUR ROOM</h3>
-            <p>Three difficulty tiers. Higher stakes, harder puzzles, bigger prizes.</p>
-          </div>
-          <div className="step-card">
-            <div className="step-number">02</div>
-            <h3>PAY TO ENTER</h3>
-            <p>One-time entry fee. Razorpay checkout. Apple Pay & Google Pay accepted.</p>
-          </div>
-          <div className="step-card">
-            <div className="step-number">03</div>
-            <h3>SOLVE THE PUZZLE</h3>
-            <p>You have 48 hours. Clues drop every 8 hours. First solver wins.</p>
-          </div>
-          <div className="step-card">
-            <div className="step-number">04</div>
-            <h3>CLAIM YOUR PRIZE</h3>
-            <p>Winner takes 70% of the total prize pool. Paid out within 48 hours.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="landing-footer">
-        <div className="footer-brand">
-          <span className="brand-symbol">◈</span> THE LAST ROOM
-        </div>
-        <div className="footer-links">
-          <span>Vol.01</span>
-          <span>·</span>
-          <span>Terms</span>
-          <span>·</span>
-          <span>Privacy</span>
-        </div>
-        <p className="footer-disclaimer">
-          Skill-based contest. Not gambling. No purchase necessary — see rules for free entry method.
+        <p className="title-sub">
+          Three games. Three suits. One survivor.<br />
+          48 hours. Winner takes the pot.
         </p>
-      </footer>
-    </main>
+
+        <div className="countdown-outer">
+          {[
+            { k: "h", l: "Hours" },
+            { k: "m", l: "Min" },
+            { k: "s", l: "Sec" },
+          ].map(({ k, l }) => (
+            <div key={k} className="cd-unit">
+              <span className={`cd-num ${timer.urgent ? "urgent" : ""}`}>
+                {pad((timer as any)[k])}
+              </span>
+              <span className="cd-label">{l}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="status-line">
+          <span className="pulse-dot" />
+          GAME ACTIVE · VOL 01 · {timer.h}H REMAINING
+        </div>
+
+        <button className="enter-btn" onClick={handleEnter}>
+          {session ? "ENTER THE ROOMS" : "SIGN IN TO ENTER"}
+        </button>
+
+        <div className="landing-disclaimer">
+          Skill contest · One-time entry fee · No subscription<br />
+          Winner takes 20–80% of pool depending on game tier<br />
+          <span style={{ color: "var(--dim)" }}>No purchase necessary · See Terms & Conditions</span>
+        </div>
+      </div>
+    </div>
   );
 }

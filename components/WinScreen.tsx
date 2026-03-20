@@ -1,68 +1,60 @@
 "use client";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { GAME_TIERS } from "@/lib/games";
+
+const pad = (n: number | string) => String(n).padStart(2, "0");
 
 export function WinScreen() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const router = useRouter();
+  
   const gameId = searchParams.get("gameId") || "clubs";
+  const game = GAME_TIERS.find((t) => t.id === gameId);
+  const playerNum = (session?.user as any)?.playerNumber || "???";
 
-  const tier = GAME_TIERS.find((t) => t.id === gameId);
-  const playerNumber = (session?.user as any)?.playerNumber || "???";
+  const tries = parseInt(searchParams.get("tries") || "1", 10);
+  const h = parseInt(searchParams.get("h") || "0", 10);
+  const m = parseInt(searchParams.get("m") || "0", 10);
+  const s = parseInt(searchParams.get("s") || "0", 10);
+
+  if (!game) return <div>Invalid game</div>;
+
+  const pool = game.cost * (game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38);
+  const prize = Math.floor(pool * game.winPercent / 100);
+  const shareText = `Player ${playerNum} cleared ${game.suitName} ${game.suit} — The Last Room Vol.01. Prize: $${prize.toLocaleString()}. ${tries} attempt${tries > 1 ? "s" : ""}. Think you can beat that? thelastroom.io`;
 
   return (
-    <div className="win-container">
-      {/* Radial glow */}
-      <div className="win-glow" />
+    <div className="win-wrap" style={{ "--win-color": game.color } as React.CSSProperties}>
+      <div className="win-bg-suit">{game.suit}</div>
+      <div className="win-content">
+        <p className="win-player-tag">PLAYER {playerNum} · {game.shape} {game.shapeLabel} CLEARED</p>
+        <div className="win-suit">{game.suit}</div>
+        <h1 className="win-headline">GAME<br/>CLEAR</h1>
+        <p className="win-subline">You saw what {game.cap === 500 ? 311 : game.cap === 200 ? 146 : 37} others could not.</p>
 
-      {/* Trophy / Badge */}
-      <div className="win-badge">
-        <div className="win-badge-inner">
-          <span className="win-crown">👑</span>
-          <span className="win-suit" style={{ color: tier?.color }}>
-            {tier?.suitSymbol || "♠"}
-          </span>
+        <div className="win-stats">
+          <div className="win-stats-header">RESULT — {game.suitName} GAME</div>
+          <div className="win-stat-row"><span className="win-stat-key">Game</span><span className="win-stat-val" style={{ color: game.color }}>{game.suit} {game.suitName}</span></div>
+          <div className="win-stat-row"><span className="win-stat-key">Attempts</span><span className="win-stat-val">{tries}</span></div>
+          <div className="win-stat-row"><span className="win-stat-key">Time remaining</span><span className="win-stat-val">{pad(h)}:{pad(m)}:{pad(s)}</span></div>
+          <div className="win-stat-row"><span className="win-stat-key">Prize pool</span><span className="win-stat-val">${pool.toLocaleString()}</span></div>
+          <div className="win-stat-row"><span className="win-stat-key">Your prize</span><span className="win-stat-val prize">${prize.toLocaleString()}</span></div>
+        </div>
+
+        <div className="win-share-quote">"{shareText}"</div>
+
+        <div className="win-actions">
+          <button className="win-copy-btn" onClick={() => { 
+            navigator.clipboard.writeText(shareText).catch(() => {}); 
+            alert("Copied!"); 
+          }}>
+            COPY & SHARE
+          </button>
+          <button className="win-lobby-btn" onClick={() => router.push("/")}>BACK TO LOBBY</button>
         </div>
       </div>
-
-      <h1 className="win-headline">YOU SURVIVED</h1>
-      <p className="win-subtitle">
-        Player #{playerNumber} — The Last Room has been conquered.
-      </p>
-
-      <div className="win-prize-card">
-        <span className="win-prize-label">YOUR PRIZE</span>
-        <span className="win-prize-amount">
-          70% of Prize Pool
-        </span>
-        <span className="win-prize-note">
-          You&apos;ll receive an email with payout instructions.
-        </span>
-      </div>
-
-      {/* Share */}
-      <div className="win-share">
-        <p className="share-prompt">PROVE IT.</p>
-        <button
-          className="share-button"
-          onClick={() => {
-            const text = `I survived The Last Room — ${tier?.name} tier. Player #${playerNumber}. 🏆 thelastroom.io`;
-            if (navigator.share) {
-              navigator.share({ text });
-            } else {
-              navigator.clipboard.writeText(text);
-              alert("Copied to clipboard!");
-            }
-          }}
-        >
-          SHARE YOUR VICTORY
-        </button>
-      </div>
-
-      <a href="/games" className="win-play-again">
-        PLAY ANOTHER ROOM →
-      </a>
     </div>
   );
 }
