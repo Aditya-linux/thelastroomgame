@@ -1,16 +1,22 @@
 "use client";
 import { useState, useEffect } from "react";
-import { GAME_TIERS, GameTier } from "@/lib/games";
+import { GameTier } from "@/lib/games";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { PayButton } from "@/components/PayButton";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function GamesPage() {
   const { data: session } = useSession();
+  const router = useRouter();
+  const [games, setGames] = useState<GameTier[]>([]);
   const [chosen, setChosen] = useState<GameTier | null>(null);
   const [screen, setScreen] = useState<"select" | "payment">("select");
   const [mounted, setMounted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loadingFree, setLoadingFree] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -20,6 +26,20 @@ export default function GamesPage() {
     } else if (params.get("unpaid") === "true") {
       setErrorMsg("ACCESS DENIED: Entry fee required. Please select a tier and complete payment.");
     }
+
+    const fetchGames = async () => {
+      try {
+        const q = query(collection(db, "games"), orderBy("cost", "asc"));
+        const snap = await getDocs(q);
+        const activeGames = snap.docs
+          .map(d => ({ id: d.id, ...d.data() } as any))
+          .filter(g => g.status === "active");
+        setGames(activeGames);
+      } catch (err) {
+        console.error("Error fetching games", err);
+      }
+    };
+    fetchGames();
   }, []);
 
   if (!mounted) return null;
@@ -70,7 +90,38 @@ export default function GamesPage() {
   }
 
   // Map dummy player counts for visual effect
-  const players: Record<string, number> = { clubs: 312, diamonds: 147, spades: 38 };
+  const players: Record<string, number> = { hearts: 894, clubs: 312, diamonds: 147, spades: 38 };
+
+  const handleProceed = async () => {
+    if (!chosen) return;
+    
+    if (chosen.cost === 0) {
+      if (!session) {
+        window.location.href = `/api/auth/signin?callbackUrl=/games`;
+        return;
+      }
+      setLoadingFree(true);
+      try {
+        const res = await fetch("/api/free-entry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gameId: chosen.id })
+        });
+        if (res.ok) {
+          router.push(`/room/${chosen.id}`);
+        } else {
+          const data = await res.json();
+          setErrorMsg(data.error || "Failed to enter room");
+          setLoadingFree(false);
+        }
+      } catch (err: any) {
+        setErrorMsg(err.message);
+        setLoadingFree(false);
+      }
+    } else {
+      setScreen("payment");
+    }
+  };
 
   return (
     <div className="game-select">
@@ -90,8 +141,12 @@ export default function GamesPage() {
         </div>
       )}
 
+      {games.length === 0 && (
+        <p style={{ color: "var(--muted)", textAlign: "center", marginTop: "2rem" }}>LOADING LOBBIES...</p>
+      )}
+
       <div className="cards-row">
-        {GAME_TIERS.map(g => (
+        {games.map(g => (
           <div
             key={g.id}
             className={`game-card ${chosen?.id === g.id ? "chosen" : ""}`}
@@ -127,7 +182,7 @@ export default function GamesPage() {
             </div>
             <div className="card-players">
               <span className="pulse-dot" style={{ background: g.color, boxShadow: `0 0 8px ${g.color}` }} />
-              {players[g.id]} entered · {g.cap - players[g.id]} slots left
+              {players[g.id] || 0} entered · {g.cap - (players[g.id] || 0)} slots left
             </div>
           </div>
         ))}
@@ -135,13 +190,15 @@ export default function GamesPage() {
 
       <button
         className="proceed-btn"
-        disabled={!chosen}
-        onClick={() => {
-          if (chosen) setScreen("payment");
-        }}
+        disabled={!chosen || loadingFree}
+        onClick={handleProceed}
       >
-        {chosen ? `ENTER ${chosen.suitName} ${chosen.suit} — $${chosen.cost}` : "SELECT A GAME"}
+        {chosen 
+          ? loadingFree ? "PROVISIONING ACCESS..." : (chosen.cost === 0 ? `ENTER ${chosen.suitName} ${chosen.suit} — FREE` : `ENTER ${chosen.suitName} ${chosen.suit} — $${chosen.cost}`) 
+          : "SELECT A GAME"}
       </button>
     </div>
   );
 }
+
+

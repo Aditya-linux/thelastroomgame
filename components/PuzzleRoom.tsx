@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
-import { GAME_TIERS } from "@/lib/games";
+import { useState, useEffect, useRef } from "react";
+import { db } from "@/lib/firebase";
+import { doc, collection, query, where, onSnapshot } from "firebase/firestore";
 
 function useTimer(startHours = 47) {
   const [secs, setSecs] = useState(startHours * 3600 + 3 * 60 + 27);
@@ -19,14 +20,11 @@ function useTimer(startHours = 47) {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-const LEADERBOARD: { num: string; time: string }[] = [
-  { num: "067", time: "04:12:33" },
-  { num: "218", time: "07:44:01" },
-  { num: "101", time: "11:05:59" },
-];
-
 export function PuzzleRoom({ gameId, userId }: { gameId: string; userId: string }) {
-  const game = GAME_TIERS.find((g) => g.id === gameId);
+  const [game, setGame] = useState<any>(null);
+  const [leaderboard, setLeaderboard] = useState<{ num: string; time: string; ts: number }[]>([]);
+  const [liveStats, setLiveStats] = useState({ attempting: 0, players: 0 });
+
   const timer = useTimer(44);
   const playerNum = userId.slice(0, 3).toUpperCase() || "???";
 
@@ -38,10 +36,84 @@ export function PuzzleRoom({ gameId, userId }: { gameId: string; userId: string 
   const [solved, setSolved] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  if (!game) return <div>Game not found</div>;
+  const prevForceHints = useRef<number>(0);
+
+  useEffect(() => {
+    // 0. Request Notification permission
+    if (typeof window !== "undefined" && "Notification" in window) {
+      Notification.requestPermission();
+    }
+
+    // 1. Live WebSockets for Game config (to detect forceHints)
+    const unsubGame = onSnapshot(doc(db, "games", gameId), (d) => {
+      if (d.exists()) {
+        const data = d.data();
+        setGame(data);
+
+        const currentForceHints = data.forceHints || 0;
+        if (currentForceHints > prevForceHints.current && prevForceHints.current !== 0) {
+          // Trigger notification
+          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+            new Notification("Intelligence Drop", {
+              body: "A new hint has been forced open by the Operator.",
+              icon: "/favicon.ico"
+            });
+          }
+          // Increment hint count locally if available
+          setHintCount(prev => prev < 2 ? prev + 1 : prev);
+        }
+        prevForceHints.current = currentForceHints;
+      }
+    });
+
+    // 2. Live WebSockets for Leaderboard and Stats
+    const q = query(collection(db, "entries"), where("gameId", "==", gameId));
+    const unsubEntries = onSnapshot(q, (snap) => {
+      let attempting = 0;
+      const lb: { num: string; time: string; ts: number }[] = [];
+
+      snap.forEach((d) => {
+        const data = d.data();
+        if (data.solvedAt) {
+          const paidAt = data.paidAt?.toMillis() || 0;
+          const solvedAt = data.solvedAt.toMillis();
+          const diffSecs = Math.floor((solvedAt - paidAt) / 1000);
+          
+          lb.push({
+            num: data.userId.slice(0, 3).toUpperCase(),
+            time: `${pad(Math.floor(diffSecs / 3600))}:${pad(Math.floor((diffSecs % 3600) / 60))}:${pad(diffSecs % 60)}`,
+            ts: solvedAt,
+          });
+        } else if (data.attempts > 0) {
+          attempting++;
+        }
+      });
+
+      lb.sort((a, b) => a.ts - b.ts);
+      setLeaderboard(lb);
+      setLiveStats({ attempting, players: snap.size });
+    });
+
+    return () => {
+      unsubGame();
+      unsubEntries();
+    };
+  }, [gameId]); // Removed getDoc import from local scope dependency
+
+  useEffect(() => {
+    // Reveal native puzzle hints based on hintCount
+    if (game?.puzzle) {
+      const hints = [game.puzzle.hint1, game.puzzle.hint2];
+      if (hintCount > 0 && hintCount <= hints.length) {
+        setHint(hints[hintCount - 1]);
+      }
+    }
+  }, [hintCount, game]);
+
+  if (!game) return <div className="game-room" style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontFamily: "var(--font-mono)" }}>LOADING SECURE PROTOCOL...</div>;
 
   const elapsedHours = 44 - timer.h;
-  const visibleClues = game.clues.filter((c) => c.hour <= elapsedHours + 1);
+  const visibleClues = game.clues.filter((c: any) => c.hour <= elapsedHours + 1);
   const p = game.puzzle;
 
   const submit = async () => {
@@ -79,9 +151,7 @@ export function PuzzleRoom({ gameId, userId }: { gameId: string; userId: string 
   };
 
   const revealHint = () => {
-    const hints = [p.hint1, p.hint2];
-    if (hintCount < hints.length) {
-      setHint(hints[hintCount]);
+    if (hintCount < 2) {
       setHintCount((c) => c + 1);
     }
   };
@@ -193,15 +263,14 @@ export function PuzzleRoom({ gameId, userId }: { gameId: string; userId: string 
       <div className="game-sidebar">
         <div className="sb-section">
           <p className="sb-label">Live Arena Stats</p>
-          <div className="sb-stat"><span className="sb-stat-key">Attempting</span><span className="sb-stat-val">{Math.floor(Math.random() * 15) + 25}</span></div>
-          <div className="sb-stat"><span className="sb-stat-key">Total players</span><span className="sb-stat-val">{game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38}</span></div>
-          <div className="sb-stat"><span className="sb-stat-key">Prize pool</span><span className="sb-stat-val">${(game.cost * (game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38)).toLocaleString()}</span></div>
-          <div className="sb-stat"><span className="sb-stat-key">Winner takes</span><span className="sb-stat-val">${Math.floor(game.cost * (game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38) * game.winPercent / 100).toLocaleString()}</span></div>
+          <div className="sb-stat"><span className="sb-stat-key">Attempting</span><span className="sb-stat-val">{liveStats.attempting > 0 ? liveStats.attempting : (Math.floor(Math.random() * 15) + 25)}</span></div>
+          <div className="sb-stat"><span className="sb-stat-key">Total players</span><span className="sb-stat-val">{liveStats.players || (game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38)}</span></div>
+          <div className="sb-stat"><span className="sb-stat-key">Prize pool</span><span className="sb-stat-val">${(game.cost * (liveStats.players || (game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38))).toLocaleString()}</span></div>
         </div>
 
         <div className="sb-section">
           <p className="sb-label">Intelligence Drops</p>
-          {game.clues.map((c, i) => (
+          {game.clues.map((c: any, i: number) => (
             visibleClues.includes(c) ? (
               <div key={i} className={`clue-card ${c.isRedHerring ? "rh" : "normal"}`}>
                 <p className="clue-hour">Hour {c.hour} {c.isRedHerring ? "· ⚠ UNVERIFIED" : "· CONFIRMED"}</p>
@@ -214,8 +283,10 @@ export function PuzzleRoom({ gameId, userId }: { gameId: string; userId: string 
         </div>
 
         <div className="sb-section">
-          <p className="sb-label">Leaderboard</p>
-          {LEADERBOARD.map((r, i) => (
+          <p className="sb-label">Live Leaderboard</p>
+          {leaderboard.length === 0 ? (
+           <div className="lb-entry" style={{ opacity: 0.5 }}><span className="lb-rank">—</span><span className="lb-num">NO SOLVES YET</span></div>
+          ) : leaderboard.map((r, i) => (
             <div key={i} className="lb-entry">
               <span className="lb-rank">#{i + 1}</span>
               <span className="lb-num">Player {r.num}</span>

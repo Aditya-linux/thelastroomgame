@@ -51,9 +51,16 @@ export async function POST(req: Request) {
         prizePool: increment(payment.amount / 100), // Prize in INR
       });
 
+      // Update user stats
+      const userRef = doc(db, "users", userId);
+      await setDoc(userRef, {
+        gamesPlayed: increment(1)
+      }, { merge: true });
+
       console.log(`✅ Razorpay Payment Verified: ${userId} unlocked ${gameId}`);
     }
   }
 
   return NextResponse.json({ received: true });
 }
+
