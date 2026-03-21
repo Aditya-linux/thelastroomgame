@@ -17,6 +17,7 @@ export default function GamesPage() {
   const [mounted, setMounted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loadingFree, setLoadingFree] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -37,12 +38,15 @@ export default function GamesPage() {
         setGames(activeGames);
       } catch (err) {
         console.error("Error fetching games", err);
+      } finally {
+        setLoadingData(false);
       }
     };
     fetchGames();
   }, []);
 
   if (!mounted) return null;
+
 
   if (screen === "payment" && chosen) {
     const prize = Math.floor(chosen.cost * 200 * chosen.winPercent / 100);
@@ -141,8 +145,17 @@ export default function GamesPage() {
         </div>
       )}
 
-      {games.length === 0 && (
+      {loadingData && (
         <p style={{ color: "var(--muted)", textAlign: "center", marginTop: "2rem" }}>LOADING LOBBIES...</p>
+      )}
+
+      {!loadingData && games.length === 0 && (
+        <div style={{ textAlign: "center", marginTop: "2rem" }}>
+          <p style={{ color: "var(--pink)", letterSpacing: "0.2em", marginBottom: "1rem" }}>NO ACTIVE LOBBIES FOUND</p>
+          <Link href="/admin" className="proceed-btn" style={{ padding: "12px 32px", fontSize: "14px" }}>
+            GO TO ADMIN DASHBOARD TO INITIALIZE GAMES
+          </Link>
+        </div>
       )}
 
       <div className="cards-row">
