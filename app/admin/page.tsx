@@ -81,12 +81,18 @@ export default function AdminDashboard() {
     try {
       for (const game of GAME_TIERS) {
         await setDoc(doc(db, "games", game.id), {
-          ...game,
+          id: game.id,
+          name: game.name,
+          suit: game.suit,
+          suitName: game.suitName,
+          cost: game.cost,
+          difficulty: game.difficulty,
           answerHash: ANSWER_HASHES[game.id],
           status: "active",
           createdAt: new Date(),
           forceHints: 0,
-          playerCount: 0
+          playerCount: 0,
+          prizePool: 0
         });
       }
       setMessage("Default games initialized successfully!");

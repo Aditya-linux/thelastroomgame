@@ -23,11 +23,24 @@ export async function POST(req: NextRequest) {
     let gameData = gameSnap.data();
 
     if (!gameSnap.exists()) {
-      // Auto-Heal: The game is missing from the database. Let's create it natively!
+      // Auto-Heal: The game is missing from the database.
+      // We only save essential METADATA. The frontend will use GAME_TIERS for the actual puzzle content.
       const baseTier = GAME_TIERS.find(t => t.id === gameId);
       if (baseTier) {
-        await setDoc(gameRef, { ...baseTier, status: "active", createdAt: new Date() });
-        gameData = baseTier; // Proceed with the verified local config
+        await setDoc(gameRef, { 
+          id: baseTier.id,
+          name: baseTier.name,
+          suit: baseTier.suit,
+          suitName: baseTier.suitName,
+          cost: baseTier.cost,
+          difficulty: baseTier.difficulty,
+          status: "active", 
+          createdAt: new Date(),
+          playerCount: 0,
+          prizePool: 0,
+          forceHints: 0
+        });
+        gameData = { ...baseTier, playerCount: 0 };
       } else {
         return NextResponse.json({ error: "Game not found" }, { status: 404 });
       }
