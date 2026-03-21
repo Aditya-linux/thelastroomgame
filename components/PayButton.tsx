@@ -55,7 +55,7 @@ export function PayButton({
         <p style={{ color: 'var(--muted)', fontSize: '0.75rem', marginTop: '10px', fontFamily: 'monospace' }}>UPI ID: {upiId}</p>
         
         <a 
-          href="https://x.com/thelastroomgame" 
+          href="https://x.com/AdityaNishad987" 
           target="_blank" 
           rel="noopener noreferrer"
           style={{ marginTop: '15px', padding: '8px 20px', backgroundColor: '#000', color: '#fff', border: '1px solid #333', borderRadius: '20px', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}
