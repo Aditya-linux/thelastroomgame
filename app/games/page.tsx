@@ -77,7 +77,7 @@ export default function GamesPage() {
   }
 
   // Map dummy player counts for visual effect
-  const players: Record<string, number> = { hearts: 89, clubs: 31, diamonds: 14, spades: 3 };
+  const players: Record<string, number> = { firstbeat: 89, clubs: 31, diamonds: 14, spades: 3 };
 
   const handleProceed = async () => {
     if (!chosen) return;
