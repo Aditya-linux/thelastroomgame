@@ -22,15 +22,29 @@ export default function AdminDashboard() {
     fetchPendingEntries();
   }, []);
 
+  const refreshDashboard = () => {
+    fetchActiveGames();
+    fetchPendingEntries();
+    setMessage("Dashboard refreshed!");
+  };
+
   const fetchActiveGames = async () => {
-    const querySnapshot = await getDocs(collection(db, "games"));
-    setActiveGames(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    try {
+      const querySnapshot = await getDocs(collection(db, "games"));
+      setActiveGames(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (e: any) {
+      setMessage(`Error fetching games: ${e.message}`);
+    }
   };
 
   const fetchPendingEntries = async () => {
-    const q = query(collection(db, "entries"), where("status", "==", "pending"));
-    const querySnapshot = await getDocs(q);
-    setPendingEntries(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    try {
+      const q = query(collection(db, "entries"), where("status", "==", "pending"));
+      const querySnapshot = await getDocs(q);
+      setPendingEntries(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (e: any) {
+      setMessage(`Error fetching entries: ${e.message}`);
+    }
   };
 
   const approveEntry = async (entryId: string) => {
@@ -41,6 +55,7 @@ export default function AdminDashboard() {
         body: JSON.stringify({ entryId })
       });
       fetchPendingEntries();
+      setMessage("Access granted!");
     } catch (e: any) {
       setMessage(`Error approving entry: ${e.message}`);
     }
@@ -93,19 +108,22 @@ export default function AdminDashboard() {
     );
   }
 
-  const containerStyle = { minHeight: '100vh', background: 'var(--bg)', color: 'var(--teal)', fontFamily: 'var(--font-mono)', padding: '2rem' };
-  const headerStyle = { fontSize: '1.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--teal)', paddingBottom: '0.5rem', letterSpacing: '0.1em' };
-  const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' };
-  const panelStyle = { border: '1px solid var(--teal)', padding: '1.5rem', background: 'var(--teal-dim)' };
-  const panelTitleStyle = { fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--teal)', letterSpacing: '0.1em' };
-  const cardStyle = { border: '1px solid rgba(0, 245, 196, 0.3)', padding: '1rem', marginBottom: '1rem', background: '#0a0a14' };
-  const flexBetween = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
-  const btnStyle = { padding: '8px 16px', background: 'rgba(0, 245, 196, 0.2)', border: '1px solid var(--teal)', color: 'var(--teal)', cursor: 'pointer', fontFamily: 'var(--font-mono)', transition: '0.2s' };
-  const btnDangerStyle = { ...btnStyle, background: 'rgba(255, 45, 107, 0.2)', borderColor: 'var(--pink)', color: 'var(--pink)' };
+  const containerStyle: React.CSSProperties = { minHeight: '100vh', background: 'var(--bg)', color: 'var(--teal)', fontFamily: 'var(--font-mono)', padding: '2rem' };
+  const headerStyle: React.CSSProperties = { fontSize: '1.5rem', letterSpacing: '0.1em' };
+  const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' };
+  const panelStyle: React.CSSProperties = { border: '1px solid var(--teal)', padding: '1.5rem', background: 'var(--teal-dim)' };
+  const panelTitleStyle: React.CSSProperties = { fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--teal)', letterSpacing: '0.1em' };
+  const cardStyle: React.CSSProperties = { border: '1px solid rgba(0, 245, 196, 0.3)', padding: '1rem', marginBottom: '1rem', background: '#0a0a14' };
+  const flexBetween: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+  const btnStyle: React.CSSProperties = { padding: '8px 16px', background: 'rgba(0, 245, 196, 0.2)', border: '1px solid var(--teal)', color: 'var(--teal)', cursor: 'pointer', fontFamily: 'var(--font-mono)', transition: '0.2s' };
+  const btnDangerStyle: React.CSSProperties = { ...btnStyle, background: 'rgba(255, 45, 107, 0.2)', borderColor: 'var(--pink)', color: 'var(--pink)' };
 
   return (
     <div style={containerStyle}>
-      <h1 style={headerStyle}>OPERATOR VIEW: THE LAST ROOM</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--teal)', paddingBottom: '0.5rem' }}>
+        <h1 style={headerStyle}>OPERATOR VIEW: THE LAST ROOM</h1>
+        <button onClick={refreshDashboard} style={btnStyle}>[↻ REFRESH DASHBOARD ]</button>
+      </div>
       
       <div style={gridStyle}>
         {/* Active Lobbies */}
