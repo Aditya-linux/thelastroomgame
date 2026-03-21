@@ -5,6 +5,7 @@ import { db } from "@/lib/firebase";
 import { doc, updateDoc, getDoc, increment, setDoc } from "firebase/firestore";
 import crypto from "crypto";
 import { razorpay } from "@/lib/razorpay";
+import { ANSWER_HASHES, GAME_TIERS } from "@/lib/games";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -28,18 +29,22 @@ export async function POST(req: NextRequest) {
 
   // Fetch the dynamic game info from Firestore
   const gameDoc = await getDoc(doc(db, "games", gameId));
-  if (!gameDoc.exists()) {
-    return NextResponse.json({ error: "Game not found" }, { status: 404 });
-  }
-  const gameData = gameDoc.data();
+  const gameData = gameDoc.data() || GAME_TIERS.find(t => t.id === gameId) || {} as any;
 
-  // Hash the submitted answer and compare to the Firestore answerHash
+  // Determine the truth hash: Native fallback > Live Database
+  const targetHash = gameData?.answerHash || ANSWER_HASHES[gameId];
+
+  if (!targetHash) {
+    return NextResponse.json({ error: "Game configuration missing" }, { status: 404 });
+  }
+
+  // Hash the submitted answer and compare to the truth
   const submitted = crypto
     .createHash("sha256")
     .update(answer.trim().toUpperCase())
     .digest("hex");
 
-  const correct = submitted === gameData.answerHash;
+  const correct = submitted === targetHash;
 
   if (correct) {
     // Mark as solved
