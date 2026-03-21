@@ -70,7 +70,8 @@ export default function AdminDashboard() {
           answerHash: ANSWER_HASHES[game.id],
           status: "active",
           createdAt: new Date(),
-          forceHints: 0
+          forceHints: 0,
+          playerCount: 0
         });
       }
       setMessage("Default games initialized successfully!");

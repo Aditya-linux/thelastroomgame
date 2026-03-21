@@ -1,18 +1,19 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, collection, query, where } from "firebase/firestore";
 import { GAME_TIERS } from "@/lib/games";
 
-export default function WaitlistPage({ params }: { params: { gameId: string } }) {
+export default function WaitlistPage({ params }: { params: Promise<{ gameId: string }> }) {
+  const { gameId } = React.use(params);
   const { data: session, status } = useSession();
   const router = useRouter();
   const [waitingCount, setWaitingCount] = useState<number>(0);
   const [accessGranted, setAccessGranted] = useState(false);
   
-  const game = GAME_TIERS.find((t) => t.id === params.gameId);
+  const game = GAME_TIERS.find((t) => t.id === gameId);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -47,7 +48,7 @@ export default function WaitlistPage({ params }: { params: { gameId: string } })
       unsubEntry();
       unsubQueue();
     };
-  }, [session, status, game, router, params.gameId]);
+  }, [session, status, game, router, gameId]);
 
   if (!game) return <div style={{ color: "var(--muted)", textAlign: "center", padding: "40px" }}>INVALID GAME</div>;
 
