@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, collection, query, where } from "firebase/firestore";
 import { GAME_TIERS } from "@/lib/games";
 
-export default function WaitlistPage({ params }: { params: Promise<{ gameId: string }> }) {
-  const { gameId } = React.use(params);
+export default function WaitlistPage() {
+  const params = useParams();
+  const gameId = params?.gameId as string;
   const { data: session, status } = useSession();
   const router = useRouter();
   const [waitingCount, setWaitingCount] = useState<number>(0);

@@ -136,7 +136,10 @@ export default function AdminDashboard() {
               </div>
             ))}
             {activeGames.length === 0 && (
-              <p style={{ color: 'var(--muted)' }}>No active lobbies found.</p>
+              <div style={{ color: 'var(--yellow)', padding: '10px', border: '1px dashed var(--yellow)', marginTop: '10px' }}>
+                ⚠ <b>NO ACTIVE LOBBIES DETECTED.</b><br/>
+                Please click the <b>&quot;&gt; INITIALIZE DEFAULT GAMES&quot;</b> button in System Controls to populate the database and activate the arena.
+              </div>
             )}
           </div>
         </div>
