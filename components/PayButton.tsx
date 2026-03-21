@@ -14,7 +14,7 @@ export function PayButton({
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const upiId = "adityanishad0402-2@okhdfcbank";
+  const upiId = "adityanishad0402-1@okaxis";
   const merchantName = "TheLastRoom";
   
   const handlePay = async (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
@@ -71,8 +71,36 @@ export function PayButton({
   return (
     <div className="upi-payment-options" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
       <p style={{ color: 'var(--muted)', fontSize: '0.8rem', textAlign: 'center', marginBottom: '5px' }}>
-        PAY VIA UPI TO UNLOCK
+        SCAN QR OR CHOOSE APP TO PAY
       </p>
+
+      {/* QR Code Section */}
+      <div style={{ 
+        background: '#111', 
+        padding: '15px', 
+        borderRadius: '8px', 
+        border: '1px solid rgba(255,255,255,0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginBottom: '10px'
+      }}>
+        <img 
+          src="/qr-payment.png" 
+          alt="Payment QR Code" 
+          style={{ width: '180px', height: '180px', borderRadius: '4px' }}
+        />
+        <p style={{ color: 'var(--muted)', fontSize: '0.7rem', marginTop: '10px' }}>
+          UPI ID: {upiId}
+        </p>
+        <div style={{ marginTop: '15px', color: '#fff', fontSize: '0.9rem', textAlign: 'center', fontWeight: 'bold' }}>
+          <p style={{ color: '#FF2D6B', marginBottom: '8px' }}>PAY the fixed amount instructed</p>
+          <p>Send your name with upi id with SS (Screenshot) for verification</p>
+          <p style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '10px', fontWeight: 'normal' }}>
+            * After payment, fill the Google Form provided below
+          </p>
+        </div>
+      </div>
       
       <a 
         href={baseUpiLink} 

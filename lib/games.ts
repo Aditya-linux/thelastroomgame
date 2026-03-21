@@ -52,17 +52,17 @@ export const GAME_TIERS: GameTier[] = [
     puzzle: {
       type: "cipher",
       title: "GAME 00 — THE AWAKENING",
-      body: "Base64 encoding. Translate the string to reveal the exit.",
-      encoded: "VEhFIERPT1IgSVMgT1BFTg==",
-      subtext: "Standard Base64.",
-      hint1: "Use a Base64 decoder online to translate the text.",
-      hint2: "The decoded message starts with 'THE DOOR...'",
-      answer: "THE DOOR IS OPEN",
+      body: "Reverse Encryption. The message is encrypted in reverse. Decrypt the sentence to find the single-word answer.",
+      encoded: "ESIR NUS EHT SEOD EREHW",
+      subtext: "Reverse the string to reveal the question.",
+      hint1: "Read the string from right to left.",
+      hint2: "The question is 'WHERE DOES THE SUN RISE'.",
+      answer: "EAST",
     },
     clues: [
-      { hour: 8, text: "The string ends in '==', a classic sign of Base64 encoding.", isRedHerring: false },
-      { hour: 16, text: "Translate from Base64 to ASCII text.", isRedHerring: false },
-      { hour: 24, text: "The answer is THE DOOR IS OPEN.", isRedHerring: false },
+      { hour: 8, text: "The message is written backwards. Flip it to read the question.", isRedHerring: false },
+      { hour: 16, text: "The sentence asks where the sun rises.", isRedHerring: false },
+      { hour: 24, text: "The answer is EAST.", isRedHerring: false },
     ],
   },
   {
@@ -197,7 +197,7 @@ export const GAME_TIERS: GameTier[] = [
 
 // Answers stored as SHA256 hashes — never in plaintext
 export const ANSWER_HASHES: Record<string, string> = {
-  hearts: "f7b2d5ccb5a06de6e5ebaa620205d0b5bbe28cdb7d2225aa1aacf7789cb1def7",
+  hearts: "03825024559394f1da8bcc3743ca996165add12b3f6fa9665e441044ae4e3e110",
   clubs: "6a9e32e9be79bb5de28f9da2f0c65586b30a1fe2f445e3e2379e0f8b727f5704",
   diamonds: "22bf47e66237c6d90a9350243362522d5f0b7070e3311bfa34a8f59c449f9e0f",
   spades: "577f72782895a15520d0403a04662f496dce68a91b0b5d641f4f61e04f06d0c1",
