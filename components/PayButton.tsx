@@ -36,9 +36,8 @@ export function PayButton({
         await new Promise((resolve) => setTimeout(resolve, 1500));
       }
 
-      // 2. Call the mock backend endpoint to grant access for testing
-      // This bypasses the old Razorpay Webhook
-      const res = await fetch("/api/upi-success", {
+      // 2. Call the backend endpoint to request access
+      const res = await fetch("/api/upi-request-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameId }),
@@ -49,8 +48,8 @@ export function PayButton({
         throw new Error(data.error);
       }
 
-      // 3. Redirect to the room
-      router.push(`/room/${gameId}`);
+      // 3. Redirect to the waitlist
+      router.push(`/waitlist/${gameId}`);
     } catch (error) {
       console.error("Payment Flow Failed:", error);
       alert("Failed to unlock room. Please try again.");

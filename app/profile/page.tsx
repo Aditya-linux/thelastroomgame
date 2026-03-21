@@ -109,7 +109,7 @@ export default function ProfilePage() {
               <div>
                 <p className="text-sm pb-1" style={{ color: "var(--green)" }}>PRIZE EARNED</p>
                 <p className="text-3xl pb-1" style={{ color: "var(--green)", textShadow: "0 0 10px rgba(0,255,0,0.3)" }}>
-                  ${profile.totalPrizeMoney}
+                  ₹{profile.totalPrizeMoney}
                 </p>
               </div>
             </div>

@@ -49,11 +49,11 @@ export default function GamesPage() {
           <div className="payment-rows">
             <div className="payment-row">
               <span className="payment-row-label">Entry Fee</span>
-              <span className="payment-row-val accent">${chosen.cost}</span>
+              <span className="payment-row-val accent">₹{chosen.cost}</span>
             </div>
             <div className="payment-row">
               <span className="payment-row-label">Prize if you win</span>
-              <span className="payment-row-val" style={{ color: chosen.color }}>${prize}+</span>
+              <span className="payment-row-val" style={{ color: chosen.color }}>₹{prize}+</span>
             </div>
             <div className="payment-row">
               <span className="payment-row-label">Winner share</span>
@@ -151,7 +151,7 @@ export default function GamesPage() {
               <div className="card-desc">{g.description}</div>
               <div className="card-stats">
                 <div className="card-stat">
-                  <span className="card-stat-val">${g.cost}</span>
+                  <span className="card-stat-val">₹{g.cost}</span>
                   <span className="card-stat-lbl">Entry</span>
                 </div>
                 <div className="card-stat">
@@ -177,7 +177,7 @@ export default function GamesPage() {
         disabled={!chosen || loadingFree}
         onClick={handleProceed}
       >
-        {chosen ? (loadingFree ? "PROVISIONING ACCESS..." : (chosen.cost === 0 ? `ENTER ${chosen.suitName} ${chosen.suit} — FREE` : `ENTER ${chosen.suitName} ${chosen.suit} — $${chosen.cost}`)) : "SELECT A GAME"}
+        {chosen ? (loadingFree ? "PROVISIONING ACCESS..." : (chosen.cost === 0 ? `ENTER ${chosen.suitName} ${chosen.suit} — FREE` : `ENTER ${chosen.suitName} ${chosen.suit} — ₹${chosen.cost}`)) : "SELECT A GAME"}
       </button>
     </div>
   );

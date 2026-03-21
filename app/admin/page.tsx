@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, query, where } from "firebase/firestore";
 import { GAME_TIERS, ANSWER_HASHES } from "@/lib/games";
 
 export default function AdminDashboard() {
@@ -11,6 +11,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [activeGames, setActiveGames] = useState<any[]>([]);
+  const [pendingEntries, setPendingEntries] = useState<any[]>([]);
   const [triggering, setTriggering] = useState<string | null>(null);
 
   // Simple admin check: restrict to a specific email for MVP
@@ -18,11 +19,31 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchActiveGames();
+    fetchPendingEntries();
   }, []);
 
   const fetchActiveGames = async () => {
     const querySnapshot = await getDocs(collection(db, "games"));
     setActiveGames(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  };
+
+  const fetchPendingEntries = async () => {
+    const q = query(collection(db, "entries"), where("status", "==", "pending"));
+    const querySnapshot = await getDocs(q);
+    setPendingEntries(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  };
+
+  const approveEntry = async (entryId: string) => {
+    try {
+      await fetch("/api/admin/approve-entry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entryId })
+      });
+      fetchPendingEntries();
+    } catch (e: any) {
+      setMessage(`Error approving entry: ${e.message}`);
+    }
   };
 
   const triggerHint = async (gameId: string) => {
@@ -90,7 +111,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-2 text-sm text-gray-400">
                   <p>Difficulty: {game.difficulty}</p>
-                  <p>Cost: ${game.cost}</p>
+                  <p>Cost: ₹{game.cost}</p>
                 </div>
                 <div className="mt-4 flex gap-2">
                   <button 
@@ -105,6 +126,34 @@ export default function AdminDashboard() {
             ))}
             {activeGames.length === 0 && (
               <p className="text-gray-500">No active lobbies found.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Pending Requests */}
+        <div className="border border-green-500 p-4 bg-green-900/10">
+          <h2 className="text-xl mb-4 text-green-400">PENDING ENTRY REQUESTS</h2>
+          <div className="space-y-4">
+            {pendingEntries.map((entry, i) => (
+              <div key={i} className="border border-yellow-500/30 p-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg text-white">Player {entry.userId.slice(0,3).toUpperCase()}</h3>
+                  <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-400">
+                    PENDING: {entry.gameId.toUpperCase()}
+                  </span>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button 
+                    onClick={() => approveEntry(entry.id)}
+                    className="px-3 py-1 bg-green-500/20 border border-green-500 hover:bg-green-500/40 transition text-white"
+                  >
+                    GRANT ACCESS
+                  </button>
+                </div>
+              </div>
+            ))}
+            {pendingEntries.length === 0 && (
+              <p className="text-gray-500">No pending verification requests.</p>
             )}
           </div>
         </div>
@@ -126,7 +175,7 @@ export default function AdminDashboard() {
           {/* Revenue */}
           <div className="border border-green-500 p-4 bg-green-900/10">
             <h2 className="text-xl mb-4 text-green-400">REVENUE (ESTIMATED)</h2>
-            <p className="text-3xl text-white">${activeGames.reduce((acc, g) => acc + (g.prizePool || 0), 0).toFixed(2)}</p>
+            <p className="text-3xl text-white">₹{activeGames.reduce((acc, g) => acc + (g.prizePool || 0), 0).toFixed(2)}</p>
             <p className="text-sm mt-2 text-gray-400">Based on Razorpay live DB entries</p>
           </div>
         </div>

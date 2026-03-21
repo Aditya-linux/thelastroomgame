@@ -23,7 +23,7 @@ export function WinScreen() {
 
   const pool = game.cost * (game.cap - 25);
   const prize = Math.floor(pool * game.winPercent / 100);
-  const shareText = `Player ${playerNum} cleared ${game.suitName} ${game.suit} — The Last Room Vol.01. Prize: $${prize.toLocaleString()}. ${tries} attempt${tries > 1 ? "s" : ""}. Think you can beat that? thelastroom.io`;
+  const shareText = `Player ${playerNum} cleared ${game.suitName} ${game.suit} — The Last Room Vol.01. Prize: ₹${prize.toLocaleString()}. ${tries} attempt${tries > 1 ? "s" : ""}. Think you can beat that? thelastroom.io`;
 
   return (
     <div className="win-wrap" style={{ "--win-color": game.color } as React.CSSProperties}>
@@ -39,8 +39,8 @@ export function WinScreen() {
           <div className="win-stat-row"><span className="win-stat-key">Game</span><span className="win-stat-val" style={{ color: game.color }}>{game.suit} {game.suitName}</span></div>
           <div className="win-stat-row"><span className="win-stat-key">Attempts</span><span className="win-stat-val">{tries}</span></div>
           <div className="win-stat-row"><span className="win-stat-key">Time remaining</span><span className="win-stat-val">{pad(h)}:{pad(m)}:{pad(s)}</span></div>
-          <div className="win-stat-row"><span className="win-stat-key">Prize pool</span><span className="win-stat-val">${pool.toLocaleString()}</span></div>
-          <div className="win-stat-row"><span className="win-stat-key">Your prize</span><span className="win-stat-val prize">${prize.toLocaleString()}</span></div>
+          <div className="win-stat-row"><span className="win-stat-key">Prize pool</span><span className="win-stat-val">₹{pool.toLocaleString()}</span></div>
+          <div className="win-stat-row"><span className="win-stat-key">Your prize</span><span className="win-stat-val prize">₹{prize.toLocaleString()}</span></div>
         </div>
 
         <div className="win-share-quote">"{shareText}"</div>

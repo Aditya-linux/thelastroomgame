@@ -272,7 +272,7 @@ export function PuzzleRoom({ gameId, userId }: { gameId: string; userId: string 
           <p className="sb-label">Live Arena Stats</p>
           <div className="sb-stat"><span className="sb-stat-key">Attempting</span><span className="sb-stat-val">{liveStats.attempting > 0 ? liveStats.attempting : (Math.floor(Math.random() * 15) + 25)}</span></div>
           <div className="sb-stat"><span className="sb-stat-key">Total players</span><span className="sb-stat-val">{liveStats.players || (game.cap - 25)}</span></div>
-          <div className="sb-stat"><span className="sb-stat-key">Prize pool</span><span className="sb-stat-val">${(game.cost * (liveStats.players || (game.cap - 25))).toLocaleString()}</span></div>
+          <div className="sb-stat"><span className="sb-stat-key">Prize pool</span><span className="sb-stat-val">₹{(game.cost * (liveStats.players || (game.cap - 25))).toLocaleString()}</span></div>
         </div>
 
         <div className="sb-section">
