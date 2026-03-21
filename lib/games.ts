@@ -30,40 +30,6 @@ export interface GameTier {
 
 export const GAME_TIERS: GameTier[] = [
   {
-    id: "hearts",
-    suit: "♥",
-    suitName: "HEARTS",
-    difficulty: "ONE",
-    diffNum: 1,
-    name: "The First Beat",
-    cost: 0,
-    cap: 1000,
-    winPercent: 0,
-    color: "#ff2d2d",
-    colorDim: "rgba(255, 45, 45, 0.12)",
-    colorBorder: "rgba(255, 45, 45, 0.35)",
-    shape: "♡",
-    shapeLabel: "HEART",
-    category: "TUTORIAL",
-    description: "A free room to learn the systems. The puzzle is straightforward.",
-    flavor: "The arena doors are open. Enter freely to learn the rules of survival.",
-    puzzle: {
-      type: "cipher",
-      title: "GAME 00 — THE TUTORIAL",
-      body: "Reverse the text to find the exit password.",
-      encoded: "TIXE EHT SI SIHT",
-      subtext: "Read it backwards.",
-      hint1: "The first word is THIS.",
-      hint2: "THIS IS THE EXIT.",
-      answer: "THIS IS THE EXIT",
-    },
-    clues: [
-      { hour: 8, text: "Read the text from right to left.", isRedHerring: false },
-      { hour: 16, text: "The last word in the encoded text is 'TIXE'. Reverse it.", isRedHerring: false },
-      { hour: 24, text: "The answer is THIS IS THE EXIT.", isRedHerring: false },
-    ],
-  },
-  {
     id: "clubs",
     suit: "♣",
     suitName: "CLUBS",
@@ -191,7 +157,6 @@ export const GAME_TIERS: GameTier[] = [
 
 // Answers stored as SHA256 hashes — never in plaintext
 export const ANSWER_HASHES: Record<string, string> = {
-  hearts: crypto.createHash("sha256").update("THIS IS THE EXIT").digest("hex"),
   clubs: crypto.createHash("sha256").update("MIRROR").digest("hex"),
   diamonds: crypto.createHash("sha256").update("THE ROOM NEVER CLOSES").digest("hex"),
   spades: crypto.createHash("sha256").update("1980SHINING").digest("hex"),
