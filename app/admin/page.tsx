@@ -83,41 +83,51 @@ export default function AdminDashboard() {
 
   if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        <div className="text-center p-8 border border-[rgba(255,45,107,0.35)] bg-[rgba(255,45,107,0.12)]">
-          <h1 className="text-xl font-mono text-[#ff2d6b]">ACCESS DENIED</h1>
-          <p className="mt-2 text-sm text-gray-400">You do not have operator privileges for the arena.</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)', color: 'var(--white)' }}>
+        <div style={{ textAlign: 'center', padding: '2rem', border: '1px solid var(--pink-border)', background: 'var(--pink-dim)' }}>
+          <h1 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-mono)', color: 'var(--pink)' }}>ACCESS DENIED</h1>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--muted)' }}>You do not have operator privileges for the arena.</p>
         </div>
       </div>
     );
   }
 
+  const containerStyle = { minHeight: '100vh', background: 'var(--bg)', color: 'var(--teal)', fontFamily: 'var(--font-mono)', padding: '2rem' };
+  const headerStyle = { fontSize: '1.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--teal)', paddingBottom: '0.5rem', letterSpacing: '0.1em' };
+  const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' };
+  const panelStyle = { border: '1px solid var(--teal)', padding: '1.5rem', background: 'var(--teal-dim)' };
+  const panelTitleStyle = { fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--teal)', letterSpacing: '0.1em' };
+  const cardStyle = { border: '1px solid rgba(0, 245, 196, 0.3)', padding: '1rem', marginBottom: '1rem', background: '#0a0a14' };
+  const flexBetween = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+  const btnStyle = { padding: '8px 16px', background: 'rgba(0, 245, 196, 0.2)', border: '1px solid var(--teal)', color: 'var(--teal)', cursor: 'pointer', fontFamily: 'var(--font-mono)', transition: '0.2s' };
+  const btnDangerStyle = { ...btnStyle, background: 'rgba(255, 45, 107, 0.2)', borderColor: 'var(--pink)', color: 'var(--pink)' };
+
   return (
-    <div className="min-h-screen bg-black text-green-500 font-mono p-8">
-      <h1 className="text-2xl mb-8 border-b border-green-500 pb-2">OPERATOR VIEW: THE LAST ROOM</h1>
+    <div style={containerStyle}>
+      <h1 style={headerStyle}>OPERATOR VIEW: THE LAST ROOM</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div style={gridStyle}>
         {/* Active Lobbies */}
-        <div className="border border-green-500 p-4 bg-green-900/10">
-          <h2 className="text-xl mb-4 text-green-400">ACTIVE LOBBIES</h2>
-          <div className="space-y-4">
+        <div style={panelStyle}>
+          <h2 style={panelTitleStyle}>ACTIVE LOBBIES</h2>
+          <div>
             {activeGames.map((game, i) => (
-              <div key={i} className="border border-green-500/30 p-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg text-white">{game.name} ({game.id})</h3>
-                  <span className={`text-xs px-2 py-1 ${game.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+              <div key={i} style={cardStyle}>
+                <div style={flexBetween}>
+                  <h3 style={{ fontSize: '1.125rem', color: 'var(--white)' }}>{game.name} ({game.id})</h3>
+                  <span style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'var(--teal-dim)', color: 'var(--teal)' }}>
                     {game.status ? game.status.toUpperCase() : 'UNKNOWN'}
                   </span>
                 </div>
-                <div className="mt-2 text-sm text-gray-400">
+                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--muted)' }}>
                   <p>Difficulty: {game.difficulty}</p>
                   <p>Cost: ₹{game.cost}</p>
                 </div>
-                <div className="mt-4 flex gap-2">
+                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
                   <button 
                     onClick={() => triggerHint(game.id)}
                     disabled={triggering === game.id}
-                    className="px-3 py-1 bg-green-500/20 border border-green-500 hover:bg-green-500/40 transition disabled:opacity-50"
+                    style={{...btnStyle, opacity: triggering === game.id ? 0.5 : 1}}
                   >
                     {triggering === game.id ? "TRANSMITTING..." : "TRIGGER HINT TO ALL"}
                   </button>
@@ -125,62 +135,61 @@ export default function AdminDashboard() {
               </div>
             ))}
             {activeGames.length === 0 && (
-              <p className="text-gray-500">No active lobbies found.</p>
+              <p style={{ color: 'var(--muted)' }}>No active lobbies found.</p>
             )}
           </div>
         </div>
 
         {/* Pending Requests */}
-        <div className="border border-green-500 p-4 bg-green-900/10">
-          <h2 className="text-xl mb-4 text-green-400">PENDING ENTRY REQUESTS</h2>
-          <div className="space-y-4">
+        <div style={{ ...panelStyle, border: '1px solid var(--pink)', background: 'var(--pink-dim)' }}>
+          <h2 style={{ ...panelTitleStyle, color: 'var(--pink)' }}>PENDING ENTRY REQUESTS</h2>
+          <div>
             {pendingEntries.map((entry, i) => (
-              <div key={i} className="border border-yellow-500/30 p-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg text-white">Player {entry.userId.slice(0,3).toUpperCase()}</h3>
-                  <span className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-400">
+              <div key={i} style={{ ...cardStyle, border: '1px solid rgba(255, 45, 107, 0.3)' }}>
+                <div style={flexBetween}>
+                  <h3 style={{ fontSize: '1.125rem', color: 'var(--white)' }}>Player {entry.userId.slice(0,3).toUpperCase()}</h3>
+                  <span style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'var(--yellow-dim)', color: 'var(--yellow)' }}>
                     PENDING: {entry.gameId.toUpperCase()}
                   </span>
                 </div>
-                <div className="mt-4 flex gap-2">
+                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
                   <button 
                     onClick={() => approveEntry(entry.id)}
-                    className="px-3 py-1 bg-green-500/20 border border-green-500 hover:bg-green-500/40 transition text-white"
+                    style={{...btnDangerStyle}}
                   >
-                    GRANT ACCESS
+                    SELECT TO GRANT ACCESS
                   </button>
                 </div>
               </div>
             ))}
             {pendingEntries.length === 0 && (
-              <p className="text-gray-500">No pending verification requests.</p>
+              <p style={{ color: 'var(--muted)' }}>No pending verification requests.</p>
             )}
           </div>
         </div>
 
         {/* Controls */}
-        <div className="space-y-8">
-          <div className="border border-green-500 p-4 bg-green-900/10">
-            <h2 className="text-xl mb-4 text-green-400">SYSTEM CONTROLS</h2>
+        <div style={{ display: 'grid', gap: '2rem' }}>
+          <div style={panelStyle}>
+            <h2 style={panelTitleStyle}>SYSTEM CONTROLS</h2>
             <button 
               onClick={initializeDefaultGames}
               disabled={loading}
-              className="w-full text-left px-4 py-2 border border-green-500 hover:bg-green-500/20 transition disabled:opacity-50"
+              style={{ ...btnStyle, width: '100%', textAlign: 'left', opacity: loading ? 0.5 : 1 }}
             >
               {loading ? "INITIALIZING..." : "> INITIALIZE DEFAULT GAMES (GAME_TIERS)"}
             </button>
-            {message && <p className="mt-4 text-sm text-yellow-500">{message}</p>}
+            {message && <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--yellow)' }}>{message}</p>}
           </div>
 
           {/* Revenue */}
-          <div className="border border-green-500 p-4 bg-green-900/10">
-            <h2 className="text-xl mb-4 text-green-400">REVENUE (ESTIMATED)</h2>
-            <p className="text-3xl text-white">₹{activeGames.reduce((acc, g) => acc + (g.prizePool || 0), 0).toFixed(2)}</p>
-            <p className="text-sm mt-2 text-gray-400">Based on Razorpay live DB entries</p>
+          <div style={panelStyle}>
+            <h2 style={panelTitleStyle}>REVENUE (ESTIMATED)</h2>
+            <p style={{ fontSize: '2rem', color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>₹{activeGames.reduce((acc, g) => acc + (g.prizePool || 0), 0).toFixed(2)}</p>
+            <p style={{ fontSize: '0.875rem', marginTop: '0.5rem', color: 'var(--muted)' }}>Based on internal DB entries</p>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

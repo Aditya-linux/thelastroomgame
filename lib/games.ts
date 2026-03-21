@@ -39,7 +39,7 @@ export const GAME_TIERS: GameTier[] = [
     name: "The First Beat",
     cost: 0,
     minCap: 10,
-    cap: 100,
+    cap: 1000000,
     winPercent: 0,
     color: "#ff2d2d",
     colorDim: "rgba(255, 45, 45, 0.12)",

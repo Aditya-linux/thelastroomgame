@@ -26,25 +26,38 @@ export function PayButton({
       return;
     }
 
-
-    setLoading(true);
     try {
+      if (cost === 0) {
+        // Free Tutorial Room Flow
+        const res = await fetch("/api/free-entry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gameId })
+        });
+        const data = await res.json();
+        if (data.success || data.error === "Already purchased") {
+          window.location.href = `/room/${gameId}`;
+        } else {
+          throw new Error(data.error);
+        }
+        return;
+      }
+
+      // Paid Waitlist Flow
       const res = await fetch("/api/upi-request-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId }),
+        body: JSON.stringify({ gameId })
       });
       const data = await res.json();
-      if (data.success) {
-        router.push(`/waitlist/${gameId}`);
-      } else if (data.error && data.error !== "Already purchased") {
+      if (data.success || data.error === "Already purchased") {
+        window.location.href = `/waitlist/${gameId}`;
+      } else {
         throw new Error(data.error);
-      } else if (data.error === "Already purchased") {
-        router.push(`/waitlist/${gameId}`); // Redirect even if already purchased
       }
     } catch (err) {
       console.error("Payment Flow Failed:", err);
-      alert("Failed to unlock room. Please try again.");
+      alert("Failed to register. Please try again.");
     } finally {
       setLoading(false);
     }
