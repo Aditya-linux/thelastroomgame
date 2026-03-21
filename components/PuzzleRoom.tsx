@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { doc, collection, query, where, onSnapshot } from "firebase/firestore";
+import { GAME_TIERS } from "@/lib/games";
 
 function useTimer(startHours = 47) {
   const [secs, setSecs] = useState(startHours * 3600 + 3 * 60 + 27);
@@ -63,6 +64,12 @@ export function PuzzleRoom({ gameId, userId }: { gameId: string; userId: string 
           setHintCount(prev => prev < 2 ? prev + 1 : prev);
         }
         prevForceHints.current = currentForceHints;
+      } else {
+        // Fallback natively if no database entry exists
+        const staticConfig = GAME_TIERS.find(t => t.id === gameId);
+        if (staticConfig) {
+          setGame(staticConfig);
+        }
       }
     });
 

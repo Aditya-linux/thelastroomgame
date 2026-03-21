@@ -4,14 +4,17 @@ import { GameTier, GAME_TIERS } from "@/lib/games";
 import { PayButton } from "@/components/PayButton";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function GamesPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [games, setGames] = useState<GameTier[]>([]);
   const [chosen, setChosen] = useState<GameTier | null>(null);
   const [screen, setScreen] = useState<"select" | "payment">("select");
   const [mounted, setMounted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loadingFree, setLoadingFree] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -27,7 +30,6 @@ export default function GamesPage() {
   }, []);
 
   if (!mounted) return null;
-
 
   if (screen === "payment" && chosen) {
     const prize = Math.floor(chosen.cost * 200 * chosen.winPercent / 100);
@@ -79,7 +81,34 @@ export default function GamesPage() {
 
   const handleProceed = async () => {
     if (!chosen) return;
-    setScreen("payment");
+    
+    if (chosen.cost === 0) {
+      if (!session) {
+        window.location.href = `/api/auth/signin?callbackUrl=/games`;
+        return;
+      }
+      setLoadingFree(true);
+      setErrorMsg(null);
+      try {
+        const res = await fetch("/api/free-entry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gameId: chosen.id })
+        });
+        if (res.ok) {
+          router.push(`/room/${chosen.id}`);
+        } else {
+          const data = await res.json();
+          setErrorMsg(data.error || "Failed to enter room");
+          setLoadingFree(false);
+        }
+      } catch (err: any) {
+        setErrorMsg(err.message);
+        setLoadingFree(false);
+      }
+    } else {
+      setScreen("payment");
+    }
   };
 
   return (
@@ -145,10 +174,10 @@ export default function GamesPage() {
 
       <button
         className="proceed-btn"
-        disabled={!chosen}
+        disabled={!chosen || loadingFree}
         onClick={handleProceed}
       >
-        {chosen ? (chosen.cost === 0 ? `ENTER ${chosen.suitName} ${chosen.suit} — FREE` : `ENTER ${chosen.suitName} ${chosen.suit} — $${chosen.cost}`) : "SELECT A GAME"}
+        {chosen ? (loadingFree ? "PROVISIONING ACCESS..." : (chosen.cost === 0 ? `ENTER ${chosen.suitName} ${chosen.suit} — FREE` : `ENTER ${chosen.suitName} ${chosen.suit} — $${chosen.cost}`)) : "SELECT A GAME"}
       </button>
     </div>
   );
