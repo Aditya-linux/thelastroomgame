@@ -17,50 +17,44 @@ export function PayButton({
   const upiId = "adityanishad0402-1@okaxis";
   const merchantName = "TheLastRoom";
   
-  const handlePay = async (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-    e.preventDefault();
+  const handlePay = async (e?: React.MouseEvent | React.FormEvent) => {
+    if (e && 'preventDefault' in e) e.preventDefault();
+    setLoading(true);
     if (!session) {
       signIn("google", { callbackUrl: `/games?autoplay=${gameId}` });
+      setLoading(false); // Reset loading if redirecting for sign-in
       return;
     }
 
-    const href = e.currentTarget.href;
 
     setLoading(true);
     try {
-      // 1. If it's a paid game, attempt to open the UPI link
-      // For mobile devices this will open the respective app.
-      if (cost > 0 && href !== "#") {
-        window.location.href = href;
-        // give it a brief moment to trigger the app intent
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-      }
-
-      // 2. Call the backend endpoint to request access
       const res = await fetch("/api/upi-request-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameId }),
       });
-
       const data = await res.json();
-      if (data.error && data.error !== "Already purchased") {
+      if (data.success) {
+        router.push(`/waitlist/${gameId}`);
+      } else if (data.error && data.error !== "Already purchased") {
         throw new Error(data.error);
+      } else if (data.error === "Already purchased") {
+        router.push(`/waitlist/${gameId}`); // Redirect even if already purchased
       }
-
-      // 3. Redirect to the waitlist
-      router.push(`/waitlist/${gameId}`);
-    } catch (error) {
-      console.error("Payment Flow Failed:", error);
+    } catch (err) {
+      console.error("Payment Flow Failed:", err);
       alert("Failed to unlock room. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  const formUrl = "https://forms.gle/RYTt6ZJ87h38kobo8";
+
   if (cost === 0) {
     return (
-      <button className="pay-btn" onClick={() => handlePay({ currentTarget: { href: "#" }, preventDefault: () => {} } as any)} disabled={loading}>
+      <button className="pay-btn" onClick={() => handlePay()} disabled={loading}>
         {loading ? "PROCESSING..." : "ENTER FOR FREE"}
       </button>
     );
@@ -86,7 +80,7 @@ export function PayButton({
         marginBottom: '10px'
       }}>
         <img 
-          src="/qr-payment.png" 
+          src="/QR.jpeg" 
           alt="Payment QR Code" 
           style={{ width: '180px', height: '180px', borderRadius: '4px' }}
         />
@@ -101,33 +95,33 @@ export function PayButton({
           </p>
         </div>
       </div>
-      
-      <a 
-        href={baseUpiLink} 
-        onClick={handlePay} 
-        className="pay-btn" 
-        style={{ textDecoration: 'none', textAlign: 'center', backgroundColor: '#fff', color: '#000' }}
-      >
-        {loading ? "PROCESSING..." : `PAY ₹${cost} WITH GPAY`}
-      </a>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
+        <a 
+          href={formUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="pay-btn" 
+          style={{ textDecoration: 'none', textAlign: 'center', backgroundColor: '#fff', color: '#000', fontWeight: 'bold' }}
+        >
+          STEP 1: FILL VERIFICATION FORM
+        </a>
 
-      <a 
-        href={baseUpiLink} 
-        onClick={handlePay} 
-        className="pay-btn" 
-        style={{ textDecoration: 'none', textAlign: 'center', backgroundColor: '#6739B7', color: '#fff' }}
-      >
-        {loading ? "PROCESSING..." : `PAY ₹${cost} WITH PHONEPE`}
-      </a>
-
-      <a 
-        href={baseUpiLink} 
-        onClick={handlePay} 
-        className="pay-btn" 
-        style={{ textDecoration: 'none', textAlign: 'center', backgroundColor: '#00BAF2', color: '#fff' }}
-      >
-        {loading ? "PROCESSING..." : `PAY ₹${cost} WITH PAYTM`}
-      </a>
+        <button 
+          onClick={() => handlePay()} 
+          className="pay-btn" 
+          disabled={loading}
+          style={{ 
+            textAlign: 'center', 
+            backgroundColor: '#FF2D6B', 
+            color: '#fff', 
+            fontWeight: 'bold',
+            border: 'none',
+            cursor: loading ? 'wait' : 'pointer'
+          }}
+        >
+          {loading ? "REGISTERING..." : "STEP 2: I HAVE PAID & SUBMITTED"}
+        </button>
+      </div>
     </div>
   );
 }
