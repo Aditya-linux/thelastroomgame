@@ -21,7 +21,7 @@ export function WinScreen() {
 
   if (!game) return <div>Invalid game</div>;
 
-  const pool = game.cost * (game.cap === 500 ? 312 : game.cap === 200 ? 147 : 38);
+  const pool = game.cost * (game.cap - 25);
   const prize = Math.floor(pool * game.winPercent / 100);
   const shareText = `Player ${playerNum} cleared ${game.suitName} ${game.suit} — The Last Room Vol.01. Prize: $${prize.toLocaleString()}. ${tries} attempt${tries > 1 ? "s" : ""}. Think you can beat that? thelastroom.io`;
 
@@ -32,7 +32,7 @@ export function WinScreen() {
         <p className="win-player-tag">PLAYER {playerNum} · {game.shape} {game.shapeLabel} CLEARED</p>
         <div className="win-suit">{game.suit}</div>
         <h1 className="win-headline">GAME<br/>CLEAR</h1>
-        <p className="win-subline">You saw what {game.cap === 500 ? 311 : game.cap === 200 ? 146 : 37} others could not.</p>
+        <p className="win-subline">You saw what {game.cap - 26} others could not.</p>
 
         <div className="win-stats">
           <div className="win-stats-header">RESULT — {game.suitName} GAME</div>

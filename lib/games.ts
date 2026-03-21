@@ -14,6 +14,7 @@ export interface GameTier {
   diffNum: number;
   name: string;
   cost: number;
+  minCap: number;
   cap: number;
   winPercent: number;
   color: string;
@@ -37,7 +38,8 @@ export const GAME_TIERS: GameTier[] = [
     diffNum: 1,
     name: "The First Beat",
     cost: 0,
-    cap: 1000,
+    minCap: 10,
+    cap: 100,
     winPercent: 0,
     color: "#ff2d2d",
     colorDim: "rgba(255, 45, 45, 0.12)",
@@ -70,8 +72,9 @@ export const GAME_TIERS: GameTier[] = [
     difficulty: "THREE",
     diffNum: 3,
     name: "The Watcher's Grid",
-    cost: 5,
-    cap: 500,
+    cost: 50,
+    minCap: 10,
+    cap: 100,
     winPercent: 20,
     color: "#00f5c4",
     colorDim: "rgba(0,245,196,0.12)",
@@ -111,8 +114,9 @@ export const GAME_TIERS: GameTier[] = [
     difficulty: "SEVEN",
     diffNum: 7,
     name: "Shift of the Dead",
-    cost: 10,
-    cap: 200,
+    cost: 200,
+    minCap: 10,
+    cap: 100,
     winPercent: 50,
     color: "#ff2d6b",
     colorDim: "rgba(255,45,107,0.12)",
@@ -145,8 +149,9 @@ export const GAME_TIERS: GameTier[] = [
     difficulty: "TEN",
     diffNum: 10,
     name: "The Signal",
-    cost: 20,
-    cap: 50,
+    cost: 500,
+    minCap: 10,
+    cap: 100,
     winPercent: 80,
     color: "#f0e040",
     colorDim: "rgba(240,224,64,0.08)",

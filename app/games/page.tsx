@@ -77,7 +77,7 @@ export default function GamesPage() {
   }
 
   // Map dummy player counts for visual effect
-  const players: Record<string, number> = { hearts: 894, clubs: 312, diamonds: 147, spades: 38 };
+  const players: Record<string, number> = { hearts: 89, clubs: 31, diamonds: 14, spades: 3 };
 
   const handleProceed = async () => {
     if (!chosen) return;
@@ -120,7 +120,7 @@ export default function GamesPage() {
       <div className="select-header">
         <p className="select-eyebrow">Choose Your Game</p>
         <h2 className="select-title">Which suit do you play?</h2>
-        <p className="select-sub">Higher difficulty · Smaller cap · Larger prize share</p>
+        <p className="select-sub">Minimum 10 players required · Maximum 100 players per game</p>
       </div>
 
       {errorMsg && (
@@ -166,7 +166,7 @@ export default function GamesPage() {
             </div>
             <div className="card-players">
               <span className="pulse-dot" style={{ background: g.color, boxShadow: `0 0 8px ${g.color}` }} />
-              {players[g.id] || 0} entered · {g.cap - (players[g.id] || 0)} slots left
+              {players[g.id] || 0} entered (Min {g.minCap}) · {g.cap - (players[g.id] || 0)} slots left
             </div>
           </div>
         ))}

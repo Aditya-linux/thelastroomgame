@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
         const payoutAccount = userDocSnapshot.data()?.payoutAccount;
 
         if (payoutAccount && amountToWinner > 0) {
+          /* STANDBY RAZORPAY CODE
           await razorpay.transfers.create({
             account: payoutAccount,
             amount: amountToWinner * 100, // INR in paise
@@ -89,7 +90,8 @@ export async function POST(req: NextRequest) {
               reason: "Winner Payout"
             }
           });
-          console.log(`✅ Automated Payout Triggered for ${userId}: ${amountToWinner} INR`);
+          */
+          console.log(`✅ [STANDBY] Automated Payout Triggered for ${userId}: ${amountToWinner} INR`);
         } else {
           console.log(`⚠ Winner ${userId} has no payout account. Contact manually.`);
         }

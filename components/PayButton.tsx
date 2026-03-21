@@ -1,13 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
 
 export function PayButton({
   gameId,
@@ -20,69 +14,93 @@ export function PayButton({
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
-
-  const handlePay = async () => {
+  const upiId = "adityanishad0402-2@okhdfcbank";
+  const merchantName = "TheLastRoom";
+  
+  const handlePay = async (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    e.preventDefault();
     if (!session) {
       signIn("google", { callbackUrl: `/games?autoplay=${gameId}` });
       return;
     }
 
+    const href = e.currentTarget.href;
+
     setLoading(true);
     try {
-      const res = await fetch("/api/razorpay/create-order", {
+      // 1. If it's a paid game, attempt to open the UPI link
+      // For mobile devices this will open the respective app.
+      if (cost > 0 && href !== "#") {
+        window.location.href = href;
+        // give it a brief moment to trigger the app intent
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+
+      // 2. Call the mock backend endpoint to grant access for testing
+      // This bypasses the old Razorpay Webhook
+      const res = await fetch("/api/upi-success", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameId }),
       });
 
-      const orderData = await res.json();
-
-      if (orderData.error) {
-        if (orderData.error === "Already purchased") {
-          router.push(`/room/${gameId}`);
-          return;
-        }
-        throw new Error(orderData.error);
+      const data = await res.json();
+      if (data.error && data.error !== "Already purchased") {
+        throw new Error(data.error);
       }
 
-      const options = {
-        key: orderData.key,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: "The Last Room",
-        description: `Entry to ${gameId} room`,
-        order_id: orderData.id,
-        handler: async function (response: any) {
-          // Success! Redirect to room
-          router.push(`/room/${gameId}`);
-        },
-        prefill: {
-          name: session.user?.name || "",
-          email: session.user?.email || "",
-        },
-        theme: {
-          color: "#FF2D6B",
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      // 3. Redirect to the room
+      router.push(`/room/${gameId}`);
     } catch (error) {
-      console.error("Payment failed:", error);
+      console.error("Payment Flow Failed:", error);
+      alert("Failed to unlock room. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  if (cost === 0) {
+    return (
+      <button className="pay-btn" onClick={() => handlePay({ currentTarget: { href: "#" }, preventDefault: () => {} } as any)} disabled={loading}>
+        {loading ? "PROCESSING..." : "ENTER FOR FREE"}
+      </button>
+    );
+  }
+
+  const baseUpiLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${cost}&cu=INR`;
+
   return (
-    <button className="pay-btn" onClick={handlePay} disabled={loading}>
-      {loading ? "PROCESSING..." : `ENTER FOR $${cost}`}
-    </button>
+    <div className="upi-payment-options" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+      <p style={{ color: 'var(--muted)', fontSize: '0.8rem', textAlign: 'center', marginBottom: '5px' }}>
+        PAY VIA UPI TO UNLOCK
+      </p>
+      
+      <a 
+        href={baseUpiLink} 
+        onClick={handlePay} 
+        className="pay-btn" 
+        style={{ textDecoration: 'none', textAlign: 'center', backgroundColor: '#fff', color: '#000' }}
+      >
+        {loading ? "PROCESSING..." : `PAY ₹${cost} WITH GPAY`}
+      </a>
+
+      <a 
+        href={baseUpiLink} 
+        onClick={handlePay} 
+        className="pay-btn" 
+        style={{ textDecoration: 'none', textAlign: 'center', backgroundColor: '#6739B7', color: '#fff' }}
+      >
+        {loading ? "PROCESSING..." : `PAY ₹${cost} WITH PHONEPE`}
+      </a>
+
+      <a 
+        href={baseUpiLink} 
+        onClick={handlePay} 
+        className="pay-btn" 
+        style={{ textDecoration: 'none', textAlign: 'center', backgroundColor: '#00BAF2', color: '#fff' }}
+      >
+        {loading ? "PROCESSING..." : `PAY ₹${cost} WITH PAYTM`}
+      </a>
+    </div>
   );
 }
