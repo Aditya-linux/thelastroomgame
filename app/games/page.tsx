@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { GameTier } from "@/lib/games";
+import { GameTier, GAME_TIERS } from "@/lib/games";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, setDoc, doc } from "firebase/firestore";
 import { PayButton } from "@/components/PayButton";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -17,7 +17,6 @@ export default function GamesPage() {
   const [mounted, setMounted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loadingFree, setLoadingFree] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -30,16 +29,26 @@ export default function GamesPage() {
 
     const fetchGames = async () => {
       try {
-        const q = query(collection(db, "games"), orderBy("cost", "asc"));
-        const snap = await getDocs(q);
-        const activeGames = snap.docs
-          .map(d => ({ id: d.id, ...d.data() } as any))
-          .filter(g => g.status === "active");
-        setGames(activeGames);
+        const snap = await getDocs(query(collection(db, "games")));
+        const dbMap = new Map();
+        snap.forEach(d => dbMap.set(d.id, d.data()));
+
+        const mergedGames = GAME_TIERS.map(baseTier => {
+          const liveData = dbMap.get(baseTier.id);
+          
+          if (!liveData) {
+            // Auto-heal backend database silently if empty
+            setDoc(doc(db, "games", baseTier.id), { ...baseTier, status: "active" }).catch(() => {});
+          }
+          
+          return { ...baseTier, ...liveData, status: "active" } as GameTier;
+        });
+
+        // Ensure sorted by cost
+        mergedGames.sort((a, b) => a.cost - b.cost);
+        setGames(mergedGames);
       } catch (err) {
         console.error("Error fetching games", err);
-      } finally {
-        setLoadingData(false);
       }
     };
     fetchGames();
@@ -145,19 +154,6 @@ export default function GamesPage() {
         </div>
       )}
 
-      {loadingData && (
-        <p style={{ color: "var(--muted)", textAlign: "center", marginTop: "2rem" }}>LOADING LOBBIES...</p>
-      )}
-
-      {!loadingData && games.length === 0 && (
-        <div style={{ textAlign: "center", marginTop: "2rem" }}>
-          <p style={{ color: "var(--pink)", letterSpacing: "0.2em", marginBottom: "1rem" }}>NO ACTIVE LOBBIES FOUND</p>
-          <Link href="/admin" className="proceed-btn" style={{ padding: "12px 32px", fontSize: "14px" }}>
-            GO TO ADMIN DASHBOARD TO INITIALIZE GAMES
-          </Link>
-        </div>
-      )}
-
       <div className="cards-row">
         {games.map(g => (
           <div
@@ -213,5 +209,3 @@ export default function GamesPage() {
     </div>
   );
 }
-
-
