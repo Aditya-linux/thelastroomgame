@@ -197,7 +197,7 @@ export const GAME_TIERS: GameTier[] = [
 
 // Answers stored as SHA256 hashes — never in plaintext
 export const ANSWER_HASHES: Record<string, string> = {
-  firstbeat: "03825024559394f1da8bcc3743ca996165add12b3f6fa9665e441044ae4e3e110",
+  firstbeat: "03825024559394f1da8bcc3743ca996165add12b3f6fa9665e44104ae4e3e110",
   clubs: "6a9e32e9be79bb5de28f9da2f0c65586b30a1fe2f445e3e2379e0f8b727f5704",
   diamonds: "22bf47e66237c6d90a9350243362522d5f0b7070e3311bfa34a8f59c449f9e0f",
   spades: "577f72782895a15520d0403a04662f496dce68a91b0b5d641f4f61e04f06d0c1",

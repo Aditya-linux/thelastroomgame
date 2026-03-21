@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 
 const answers = {
-  firstbeat: "THE DOOR IS OPEN",
+  firstbeat: "EAST",
   clubs: "SILENCE",
   diamonds: "THE TRUTH IS HIDDEN",
   spades: "1999WAKE",
