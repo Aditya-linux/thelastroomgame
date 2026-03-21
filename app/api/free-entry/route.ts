@@ -37,33 +37,31 @@ export async function POST(req: NextRequest) {
     const entryId = `${userId}_${gameId}`;
     const entryRef = doc(db, "entries", entryId);
 
-    const entrySnap = await getDoc(entryRef);
-    if (!entrySnap.exists()) {
-      // Create new free entry!
-      await setDoc(entryRef, {
-        userId,
-        gameId,
-        paid: true, // Free rooms are automatically "paid"
-        paidAt: new Date(),
-        attempts: 0,
-        amount: 0,
-      });
+    // Force create/update entry as paid for the donation model
+    await setDoc(entryRef, {
+      userId,
+      gameId,
+      paid: true,
+      paidAt: new Date(),
+      status: "active",
+      attempts: 0,
+      amount: 0,
+    }, { merge: true });
 
-      // Update user stats
-      const userRef = doc(db, "users", userId);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        await updateDoc(userRef, {
-          gamesPlayed: increment(1),
-        });
-      } else {
-        await setDoc(userRef, {
-          gamesPlayed: 1,
-          gamesWon: 0,
-          totalPrizeMoney: 0,
-          badges: [],
-        });
-      }
+    // Update user stats
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      await updateDoc(userRef, {
+        gamesPlayed: increment(1),
+      });
+    } else {
+      await setDoc(userRef, {
+        gamesPlayed: 1,
+        gamesWon: 0,
+        totalPrizeMoney: 0,
+        badges: [],
+      });
     }
 
     return NextResponse.json({ success: true, entryId });

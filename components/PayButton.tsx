@@ -31,11 +31,11 @@ export function PayButton({
       if (data.success || data.error === "Already purchased") {
         window.location.href = `/room/${gameId}`;
       } else {
-        throw new Error(data.error);
+        throw new Error(data.error || "Unknown server error");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Access Flow Failed:", err);
-      alert("Failed to initialize room access. Please try again.");
+      alert(`Failed to initialize room access: ${err.message}`);
     } finally {
       setLoading(false);
     }
