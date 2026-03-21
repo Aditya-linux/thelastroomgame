@@ -1,140 +1,89 @@
 "use client";
 import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 
 export function PayButton({
   gameId,
-  cost,
 }: {
   gameId: string;
-  cost: number;
 }) {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const upiId = "adityanishad0402-1@okaxis";
-  const merchantName = "TheLastRoom";
-  
-  const handlePay = async (e?: React.MouseEvent | React.FormEvent) => {
-    if (e && 'preventDefault' in e) e.preventDefault();
+
+  const handleContinue = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     if (!session) {
       signIn("google", { callbackUrl: `/games?autoplay=${gameId}` });
-      setLoading(false); // Reset loading if redirecting for sign-in
+      setLoading(false);
       return;
     }
 
     try {
-      if (cost === 0) {
-        // Free Tutorial Room Flow
-        const res = await fetch("/api/free-entry", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ gameId })
-        });
-        const data = await res.json();
-        if (data.success || data.error === "Already purchased") {
-          window.location.href = `/room/${gameId}`;
-        } else {
-          throw new Error(data.error);
-        }
-        return;
-      }
-
-      // Paid Waitlist Flow
-      const res = await fetch("/api/upi-request-access", {
+      const res = await fetch("/api/free-entry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameId })
       });
       const data = await res.json();
       if (data.success || data.error === "Already purchased") {
-        window.location.href = `/waitlist/${gameId}`;
+        window.location.href = `/room/${gameId}`;
       } else {
         throw new Error(data.error);
       }
     } catch (err) {
-      console.error("Payment Flow Failed:", err);
-      alert("Failed to register. Please try again.");
+      console.error("Access Flow Failed:", err);
+      alert("Failed to initialize room access. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const formUrl = "https://forms.gle/RYTt6ZJ87h38kobo8";
-
-  if (cost === 0) {
-    return (
-      <button className="pay-btn" onClick={() => handlePay()} disabled={loading}>
-        {loading ? "PROCESSING..." : "ENTER FOR FREE"}
-      </button>
-    );
-  }
-
-  const baseUpiLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${cost}&cu=INR`;
-
   return (
-    <div className="upi-payment-options" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-      <p style={{ color: 'var(--muted)', fontSize: '0.8rem', textAlign: 'center', marginBottom: '5px' }}>
-        SCAN QR OR CHOOSE APP TO PAY
-      </p>
-
-      {/* QR Code Section */}
-      <div style={{ 
-        background: '#111', 
-        padding: '15px', 
-        borderRadius: '8px', 
-        border: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        marginBottom: '10px'
-      }}>
-        <img 
-          src="/QR.jpeg" 
-          alt="Payment QR Code" 
-          style={{ width: '180px', height: '180px', borderRadius: '4px' }}
-        />
-        <p style={{ color: 'var(--muted)', fontSize: '0.7rem', marginTop: '10px' }}>
-          UPI ID: {upiId}
+    <div className="support-dev-options" style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '10px' }}>
+      <div style={{ background: '#111', padding: '15px', borderRadius: '8px', border: '1px solid var(--pink)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <p style={{ color: 'var(--white)', fontSize: '1rem', textAlign: 'center', marginBottom: '10px', fontWeight: 'bold', letterSpacing: '0.1em' }}>
+          SUPPORT THE DEVELOPER
         </p>
-        <div style={{ marginTop: '15px', color: '#fff', fontSize: '0.9rem', textAlign: 'center', fontWeight: 'bold' }}>
-          <p style={{ color: '#FF2D6B', marginBottom: '8px' }}>PAY the fixed amount instructed</p>
-          <p>Send your name with upi id with SS (Screenshot) for verification</p>
-          <p style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '10px', fontWeight: 'normal' }}>
-            * After payment, fill the Google Form provided below
-          </p>
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
+        <p style={{ color: 'var(--muted)', fontSize: '0.85rem', textAlign: 'center', marginBottom: '15px', lineHeight: '1.4' }}>
+          This room is completely free to play.<br/>If you enjoy the puzzles, consider supporting to help me build more!
+        </p>
+        
+        <img src="/QR.jpeg" alt="Donate QR Code" style={{ width: '160px', height: '160px', borderRadius: '4px', border: '2px solid var(--pink)' }} />
+        <p style={{ color: 'var(--muted)', fontSize: '0.75rem', marginTop: '10px', fontFamily: 'monospace' }}>UPI ID: {upiId}</p>
+        
         <a 
-          href={formUrl} 
+          href="https://x.com/thelastroomgame" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="pay-btn" 
-          style={{ textDecoration: 'none', textAlign: 'center', backgroundColor: '#fff', color: '#000', fontWeight: 'bold' }}
+          style={{ marginTop: '15px', padding: '8px 20px', backgroundColor: '#000', color: '#fff', border: '1px solid #333', borderRadius: '20px', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}
         >
-          STEP 1: FILL VERIFICATION FORM
+          𝕏 Follow for Updates
         </a>
-
-        <button 
-          onClick={() => handlePay()} 
-          className="pay-btn" 
-          disabled={loading}
-          style={{ 
-            textAlign: 'center', 
-            backgroundColor: '#FF2D6B', 
-            color: '#fff', 
-            fontWeight: 'bold',
-            border: 'none',
-            cursor: loading ? 'wait' : 'pointer'
-          }}
-        >
-          {loading ? "REGISTERING..." : "STEP 2: I HAVE PAID & SUBMITTED"}
-        </button>
       </div>
+
+      <button 
+        onClick={handleContinue} 
+        disabled={loading}
+        style={{ 
+          textAlign: 'center', 
+          backgroundColor: '#00f5c4', 
+          color: '#000', 
+          fontWeight: 'bold',
+          border: 'none',
+          padding: '14px',
+          borderRadius: '4px',
+          cursor: loading ? 'wait' : 'pointer',
+          fontFamily: 'var(--font-mono)',
+          letterSpacing: '0.1em',
+          transition: '0.2s',
+          textTransform: 'uppercase'
+        }}
+      >
+        {loading ? "INITIALIZING LINK..." : "CONTINUE TO GAME ➔"}
+      </button>
     </div>
   );
 }

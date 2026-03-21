@@ -25,16 +25,12 @@ export async function POST(req: NextRequest) {
     if (!gameSnap.exists()) {
       // Auto-Heal: The game is missing from the database. Let's create it natively!
       const baseTier = GAME_TIERS.find(t => t.id === gameId);
-      if (baseTier && baseTier.cost === 0) {
+      if (baseTier) {
         await setDoc(gameRef, { ...baseTier, status: "active", createdAt: new Date() });
         gameData = baseTier; // Proceed with the verified local config
       } else {
         return NextResponse.json({ error: "Game not found" }, { status: 404 });
       }
-    }
-
-    if (gameData?.cost !== 0) {
-      return NextResponse.json({ error: "This room requires a paid entry." }, { status: 403 });
     }
 
     const userId = (session.user as any).id;

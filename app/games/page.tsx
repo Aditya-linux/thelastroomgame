@@ -14,7 +14,6 @@ export default function GamesPage() {
   const [screen, setScreen] = useState<"select" | "payment">("select");
   const [mounted, setMounted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [loadingFree, setLoadingFree] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -32,8 +31,6 @@ export default function GamesPage() {
   if (!mounted) return null;
 
   if (screen === "payment" && chosen) {
-    const prize = Math.floor(chosen.cost * 200 * chosen.winPercent / 100);
-
     return (
       <div className="payment-screen">
         <p className="select-eyebrow" style={{ letterSpacing: "0.5em", color: "var(--muted)" }}>CONFIRM ENTRY</p>
@@ -48,29 +45,16 @@ export default function GamesPage() {
           </div>
           <div className="payment-rows">
             <div className="payment-row">
-              <span className="payment-row-label">Entry Fee</span>
+              <span className="payment-row-label">Suggested Donation</span>
               <span className="payment-row-val accent">₹{chosen.cost}</span>
             </div>
-            <div className="payment-row">
-              <span className="payment-row-label">Prize if you win</span>
-              <span className="payment-row-val" style={{ color: chosen.color }}>₹{prize}+</span>
-            </div>
-            <div className="payment-row">
-              <span className="payment-row-label">Winner share</span>
-              <span className="payment-row-val">{chosen.winPercent}% of total pool</span>
-            </div>
-            <div className="payment-row">
-              <span className="payment-row-label">Refund policy</span>
-              <span className="payment-row-val" style={{ color: "var(--muted)", fontSize: 11 }}>None after door opens</span>
-            </div>
           </div>
-          <PayButton gameId={chosen.id} cost={chosen.cost} />
+          <PayButton gameId={chosen.id} />
         </div>
 
         <button className="back-ghost" onClick={() => setScreen("select")}>← BACK TO GAMES</button>
         <p className="legal-note">
-          This is a skill contest. No purchase necessary — mail-in entry available per T&C.
-          Entry fees fund the prize pool. You keep 30% as operator. Winner verified by solve path.
+          This project relies on your generous support. Donations help to keep the servers running and build new puzzles. 
         </p>
       </div>
     );
@@ -81,34 +65,7 @@ export default function GamesPage() {
 
   const handleProceed = async () => {
     if (!chosen) return;
-    
-    if (chosen.cost === 0) {
-      if (!session) {
-        window.location.href = `/api/auth/signin?callbackUrl=/games`;
-        return;
-      }
-      setLoadingFree(true);
-      setErrorMsg(null);
-      try {
-        const res = await fetch("/api/free-entry", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ gameId: chosen.id })
-        });
-        if (res.ok) {
-          router.push(`/room/${chosen.id}`);
-        } else {
-          const data = await res.json();
-          setErrorMsg(data.error || "Failed to enter room");
-          setLoadingFree(false);
-        }
-      } catch (err: any) {
-        setErrorMsg(err.message);
-        setLoadingFree(false);
-      }
-    } else {
-      setScreen("payment");
-    }
+    setScreen("payment");
   };
 
   return (
@@ -174,10 +131,10 @@ export default function GamesPage() {
 
       <button
         className="proceed-btn"
-        disabled={!chosen || loadingFree}
+        disabled={!chosen}
         onClick={handleProceed}
       >
-        {chosen ? (loadingFree ? "PROVISIONING ACCESS..." : (chosen.cost === 0 ? `ENTER ${chosen.suitName} ${chosen.suit} — FREE` : `ENTER ${chosen.suitName} ${chosen.suit} — ₹${chosen.cost}`)) : "SELECT A GAME"}
+        {chosen ? `SUPPORT DEV & ENTER ${chosen.suitName} ${chosen.suit}` : "SELECT A GAME"}
       </button>
     </div>
   );
