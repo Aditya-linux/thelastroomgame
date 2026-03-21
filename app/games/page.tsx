@@ -75,7 +75,7 @@ export default function GamesPage() {
   }
 
   // Map dummy player counts for visual effect
-  const players: Record<string, number> = { clubs: 312, diamonds: 147, spades: 38 };
+  const players: Record<string, number> = { hearts: 894, clubs: 312, diamonds: 147, spades: 38 };
 
   const handleProceed = async () => {
     if (!chosen) return;
@@ -148,7 +148,7 @@ export default function GamesPage() {
         disabled={!chosen}
         onClick={handleProceed}
       >
-        {chosen ? `ENTER ${chosen.suitName} ${chosen.suit} — $${chosen.cost}` : "SELECT A GAME"}
+        {chosen ? (chosen.cost === 0 ? `ENTER ${chosen.suitName} ${chosen.suit} — FREE` : `ENTER ${chosen.suitName} ${chosen.suit} — $${chosen.cost}`) : "SELECT A GAME"}
       </button>
     </div>
   );
